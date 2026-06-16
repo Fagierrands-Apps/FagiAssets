@@ -1,0 +1,347 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    DJANGO CPANEL DEPLOYMENT FLOWCHART                        ║
+║                         Visual Deployment Guide                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+                              ┌─────────────────┐
+                              │  START HERE!    │
+                              │  You want to    │
+                              │  host your      │
+                              │  Django project │
+                              └────────┬────────┘
+                                       │
+                                       ▼
+                        ┌──────────────────────────┐
+                        │ Do you have cPanel +     │
+                        │ PostgreSQL?              │
+                        └──────┬──────────┬────────┘
+                               │          │
+                         YES ──┘          └── NO
+                          │                   │
+                          ▼                   ▼
+              ┌───────────────────┐   ┌──────────────────┐
+              │  CPANEL PATH      │   │  ALTERNATIVE     │
+              │  (Recommended)    │   │  HOSTING         │
+              └─────────┬─────────┘   └────────┬─────────┘
+                        │                      │
+                        │                      ▼
+                        │         ┌────────────────────────┐
+                        │         │ Choose Platform:       │
+                        │         │ • Railway (easiest)    │
+                        │         │ • Render (free)        │
+                        │         │ • Vercel (configured)  │
+                        │         │ • DigitalOcean ($5)    │
+                        │         │ • PythonAnywhere       │
+                        │         └────────────────────────┘
+                        │                      │
+                        │                      │
+                        │         See README_HOSTING.md
+                        │         Section: Alternative Options
+                        │
+                        ▼
+        ┌───────────────────────────────┐
+        │  STEP 1: LOCAL PREPARATION    │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │ Run: python setup_cpanel.py   │
+        │                               │
+        │ This will:                    │
+        │ • Ask for domain              │
+        │ • Ask for DB credentials      │
+        │ • Generate SECRET_KEY         │
+        │ • Create .env file            │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │  STEP 2: CPANEL DATABASE      │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │ 1. Login to cPanel            │
+        │ 2. Go to PostgreSQL Databases │
+        │ 3. Create database            │
+        │ 4. Create user                │
+        │ 5. Add user to database       │
+        │ 6. Note credentials           │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │  STEP 3: UPLOAD FILES         │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │ Choose upload method:         │
+        │                               │
+        │ A) Git (Recommended)          │
+        │    ssh user@domain.com        │
+        │    git clone repo             │
+        │                               │
+        │ B) FTP                        │
+        │    Upload via FileZilla       │
+        │                               │
+        │ C) File Manager               │
+        │    Upload ZIP via cPanel      │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │  STEP 4: RUN DEPLOYMENT       │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │ SSH into server:              │
+        │                               │
+        │ cd ~/fagiassets               │
+        │ chmod +x cpanel_deploy.sh     │
+        │ ./cpanel_deploy.sh            │
+        │                               │
+        │ This will:                    │
+        │ • Install dependencies        │
+        │ • Run migrations              │
+        │ • Collect static files        │
+        │ • Create admin user           │
+        │ • Set permissions             │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │  STEP 5: SETUP PYTHON APP     │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │ In cPanel:                    │
+        │                               │
+        │ 1. Go to "Setup Python App"   │
+        │ 2. Click "Create Application" │
+        │ 3. Configure:                 │
+        │    • Python: 3.9+             │
+        │    • Root: ~/fagiassets       │
+        │    • URL: /                   │
+        │    • Startup: passenger_wsgi  │
+        │    • Entry: application       │
+        │ 4. Click "Create"             │
+        │ 5. Click "Restart"            │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │  STEP 6: TEST DEPLOYMENT      │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │ Visit: yourdomain.com/login/  │
+        │                               │
+        │ Test:                         │
+        │ ✓ Site loads                  │
+        │ ✓ Static files load           │
+        │ ✓ Login works                 │
+        │ ✓ Admin panel works           │
+        │ ✓ All features work           │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │  SUCCESS! 🎉                  │
+        │                               │
+        │  Your site is live at:        │
+        │  https://yourdomain.com       │
+        │                               │
+        │  Admin Login:                 │
+        │  Username: admin              │
+        │  Password: FagiAssets2024!    │
+        │                               │
+        │  ⚠️  CHANGE PASSWORD NOW!     │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │  POST-DEPLOYMENT              │
+        └───────────┬───────────────────┘
+                    │
+                    ▼
+        ┌───────────────────────────────┐
+        │ Security:                     │
+        │ □ Change admin password       │
+        │ □ Install SSL certificate     │
+        │ □ Remove test users           │
+        │ □ Review security settings    │
+        │                               │
+        │ Optimization:                 │
+        │ □ Enable caching              │
+        │ □ Setup monitoring            │
+        │ □ Configure backups           │
+        │                               │
+        │ Maintenance:                  │
+        │ □ Document deployment         │
+        │ □ Setup update procedure      │
+        │ □ Schedule regular backups    │
+        └───────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                              TROUBLESHOOTING PATHS
+═══════════════════════════════════════════════════════════════════════════════
+
+Problem: 500 Internal Server Error
+│
+├─→ Check Django error log: ~/fagiassets/assetmanagement/django_errors.log
+├─→ Check Apache error log: ~/logs/error_log
+├─→ Verify database credentials in .env
+├─→ Check ALLOWED_HOSTS includes your domain
+└─→ Restart Python app in cPanel
+
+
+Problem: Static Files Not Loading
+│
+├─→ Run: python manage.py collectstatic --noinput
+├─→ Check .htaccess configuration
+├─→ Verify file permissions (755 for dirs, 644 for files)
+└─→ Restart Python app in cPanel
+
+
+Problem: Database Connection Error
+│
+├─→ Verify credentials in .env file
+├─→ Test: python manage.py dbshell
+├─→ Check PostgreSQL is running
+├─→ Verify user has correct privileges
+└─→ Check database exists
+
+
+Problem: Module Not Found
+│
+├─→ Activate virtual environment
+├─→ Run: pip install -r requirements.txt --force-reinstall
+└─→ Restart Python app in cPanel
+
+
+Problem: Permission Denied
+│
+├─→ Run: chmod -R 755 ~/fagiassets
+├─→ Run: chmod -R 777 ~/fagiassets/assetmanagement/media
+├─→ Run: chmod -R 777 ~/fagiassets/assetmanagement/staticfiles
+└─→ Run: chmod +x ~/fagiassets/cpanel_deploy.sh
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                              QUICK REFERENCE
+═══════════════════════════════════════════════════════════════════════════════
+
+Essential Commands:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Activate Virtual Environment:                                              │
+│   source ~/virtualenv/fagiassets/3.9/bin/activate                          │
+│                                                                             │
+│ Run Migrations:                                                             │
+│   cd ~/fagiassets/assetmanagement                                          │
+│   python manage.py migrate                                                  │
+│                                                                             │
+│ Collect Static Files:                                                       │
+│   python manage.py collectstatic --noinput                                  │
+│                                                                             │
+│ Create Superuser:                                                           │
+│   python manage.py createsuperuser                                          │
+│                                                                             │
+│ Check Logs:                                                                 │
+│   tail -f ~/fagiassets/assetmanagement/django_errors.log                   │
+│   tail -f ~/logs/error_log                                                  │
+│                                                                             │
+│ Restart App:                                                                │
+│   cPanel → Setup Python App → Click "Restart"                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+Important Files:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Configuration:                                                              │
+│   .env                          - Environment variables                     │
+│   passenger_wsgi.py             - cPanel entry point                        │
+│   .htaccess                     - Apache configuration                      │
+│                                                                             │
+│ Deployment:                                                                 │
+│   cpanel_deploy.sh              - Deployment script                         │
+│   setup_cpanel.py               - Configuration helper                      │
+│                                                                             │
+│ Documentation:                                                              │
+│   START_HERE.md                 - Start here!                               │
+│   QUICK_CPANEL_SETUP.md         - Quick guide                               │
+│   CPANEL_DEPLOYMENT_GUIDE.md    - Detailed guide                            │
+│   README_HOSTING.md             - All hosting options                       │
+│   DEPLOYMENT_CHECKLIST.txt      - Progress tracker                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+Time Estimates:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Local Preparation:        5 minutes                                         │
+│ Database Setup:           5 minutes                                         │
+│ File Upload:              3-10 minutes (depends on method)                  │
+│ Deployment Script:        3 minutes                                         │
+│ Python App Setup:         2 minutes                                         │
+│ Testing:                  5-10 minutes                                      │
+│                                                                             │
+│ TOTAL:                    23-35 minutes                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                              DECISION TREE
+═══════════════════════════════════════════════════════════════════════════════
+
+                    What's your situation?
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+   I have cPanel      I want free        I want easiest
+   + PostgreSQL       hosting            setup
+        │                   │                   │
+        ▼                   ▼                   ▼
+   Use cPanel         Use Render         Use Railway
+   (This guide)       (Free tier)        ($5/month)
+                      or Vercel          
+                      (configured)       
+
+
+                    What's your priority?
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+   Speed              Cost               Features
+   (Deploy fast)      (Minimize)         (Full control)
+        │                   │                   │
+        ▼                   ▼                   ▼
+   Vercel             Render Free        Railway or
+   (5 min)            or PythonAnywhere  DigitalOcean
+                      (Free tier)        
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                              NEXT STEPS
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Open START_HERE.md for overview
+2. Choose your deployment path
+3. Follow the appropriate guide
+4. Use DEPLOYMENT_CHECKLIST.txt to track progress
+5. Test thoroughly
+6. Secure your deployment
+7. Setup backups
+8. Monitor and maintain
+
+═══════════════════════════════════════════════════════════════════════════════
+
+                    🚀 Ready to deploy? Let's go! 🚀
+
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,271 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    MIGRATION FIX DECISION FLOWCHART                   ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+START: You get a migration error
+           |
+           v
+    ┌──────────────────┐
+    │ What's the error?│
+    └──────────────────┘
+           |
+           v
+    ┌─────────────────────────────────────────────────────────┐
+    │                                                           │
+    v                           v                              v
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────────┐
+│ "relation       │    │ "column already  │    │ "No such table"      │
+│  already exists"│    │  exists"         │    │                      │
+└─────────────────┘    └──────────────────┘    └──────────────────────┘
+    |                           |                              |
+    v                           v                              v
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────────┐
+│ Table exists    │    │ Column exists    │    │ Table missing        │
+│ but migration   │    │ but migration    │    │ Run migrations       │
+│ not marked      │    │ not marked       │    │ normally             │
+└─────────────────┘    └──────────────────┘    └──────────────────────┘
+    |                           |                              |
+    v                           v                              v
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────────┐
+│ SOLUTION:       │    │ SOLUTION:        │    │ python manage.py     │
+│ python manage.py│    │ python manage.py │    │ migrate              │
+│ migrate <app>   │    │ migrate <app>    │    │                      │
+│ --fake          │    │ <number> --fake  │    │ ✓ DONE               │
+└─────────────────┘    └──────────────────┘    └──────────────────────┘
+    |                           |
+    v                           v
+┌─────────────────┐    ┌──────────────────┐
+│ python manage.py│    │ python manage.py │
+│ migrate         │    │ migrate          │
+└─────────────────┘    └──────────────────┘
+    |                           |
+    v                           v
+┌─────────────────┐    ┌──────────────────┐
+│ ✓ DONE          │    │ ✓ DONE           │
+└─────────────────┘    └──────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+
+                        YOUR SPECIFIC CASE
+
+Error: "column 'device_id' of relation 'assets_asset' already exists"
+       |
+       v
+┌──────────────────────────────────────────────────────────────────────┐
+│ This is a "column already exists" error                              │
+│ Migration: assets.0002                                               │
+└──────────────────────────────────────────────────────────────────────┘
+       |
+       v
+┌──────────────────────────────────────────────────────────────────────┐
+│ SOLUTION PATH 1: Direct Command (Fastest)                            │
+│                                                                       │
+│ python manage.py migrate assets 0002 --fake                          │
+│ python manage.py migrate                                             │
+│                                                                       │
+│ Time: 30 seconds                                                     │
+│ Risk: Low                                                            │
+│ Recommended: ✓ YES                                                   │
+└──────────────────────────────────────────────────────────────────────┘
+       |
+       v
+┌──────────────────────────────────────────────────────────────────────┐
+│ SOLUTION PATH 2: Use Fix Script (Automated)                          │
+│                                                                       │
+│ python fix_partial_migrations.py                                     │
+│                                                                       │
+│ Time: 1 minute                                                       │
+│ Risk: Low                                                            │
+│ Recommended: ✓ YES                                                   │
+└──────────────────────────────────────────────────────────────────────┘
+       |
+       v
+┌──────────────────────────────────────────────────────────────────────┐
+│ SOLUTION PATH 3: Comprehensive Fix (All Apps)                        │
+│                                                                       │
+│ python fix_all_partial_migrations.py                                 │
+│                                                                       │
+│ Time: 2-3 minutes                                                    │
+│ Risk: Low                                                            │
+│ Recommended: If Path 1 & 2 fail                                      │
+└──────────────────────────────────────────────────────────────────────┘
+       |
+       v
+┌──────────────────────────────────────────────────────────────────────┐
+│ VERIFY:                                                              │
+│ python manage.py showmigrations                                      │
+│                                                                       │
+│ Expected: All migrations show [X]                                    │
+└──────────────────────────────────────────────────────────────────────┘
+       |
+       v
+    ✓ DONE
+
+
+═══════════════════════════════════════════════════════════════════════
+
+                    TESTING BEFORE FIXING
+
+Want to test first without making changes?
+       |
+       v
+┌──────────────────────────────────────────────────────────────────────┐
+│ python test_migration_fix.py                                         │
+│                                                                       │
+│ This will:                                                           │
+│ - Check which columns exist                                          │
+│ - Check which migrations are applied                                 │
+│ - Tell you exactly what to do                                        │
+│ - Make NO changes to your database                                   │
+│                                                                       │
+│ Safe to run: ✓ YES                                                   │
+│ Recommended: ✓ YES (especially for beginners)                        │
+└──────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+
+                    TROUBLESHOOTING FLOWCHART
+
+Fix didn't work?
+       |
+       v
+┌──────────────────────────────────────────────────────────────────────┐
+│ Did you get another "already exists" error?                          │
+└──────────────────────────────────────────────────────────────────────┘
+       |
+       ├─── YES ──> Fake that migration too
+       |            python manage.py migrate <app> <number> --fake
+       |            python manage.py migrate
+       |
+       └─── NO ──> Continue below
+                    |
+                    v
+┌──────────────────────────────────────────────────────────────────────┐
+│ Can you connect to the database?                                     │
+└──────────────────────────────────────────────────────────────────────┘
+       |
+       ├─── NO ──> Check database settings
+       |           Check PostgreSQL is running
+       |           Check network connectivity
+       |
+       └─── YES ──> Continue below
+                    |
+                    v
+┌──────────────────────────────────────────────────────────────────────┐
+│ Are migrations showing as applied?                                   │
+│ (python manage.py showmigrations)                                    │
+└──────────────────────────────────────────────────────────────────────┘
+       |
+       ├─── NO ──> Try: python manage.py migrate --fake
+       |           Then: python manage.py showmigrations
+       |
+       └─── YES ──> Try: python manage.py migrate
+                    Should work now!
+
+
+═══════════════════════════════════════════════════════════════════════
+
+                    COMMAND QUICK REFERENCE
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ COMMAND                                    │ WHAT IT DOES            │
+├────────────────────────────────────────────┼─────────────────────────┤
+│ python manage.py showmigrations            │ Show status             │
+│ python manage.py migrate                   │ Apply migrations        │
+│ python manage.py migrate --fake            │ Fake all migrations     │
+│ python manage.py migrate <app> --fake      │ Fake app migrations     │
+│ python manage.py migrate <app> <num> --fake│ Fake specific migration │
+│ python test_migration_fix.py               │ Test (no changes)       │
+│ python fix_partial_migrations.py           │ Auto-fix assets.0002    │
+│ python fix_all_partial_migrations.py       │ Auto-fix all apps       │
+└──────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+
+                    FILE NAVIGATION MAP
+
+Need help? Pick a file:
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ SITUATION                          │ FILE TO READ/RUN               │
+├────────────────────────────────────┼────────────────────────────────┤
+│ I want to fix it NOW               │ Run command at top             │
+│ I want to understand first         │ CURRENT_ISSUE_FIX.md           │
+│ I want a quick reference           │ QUICK_FIX_COLUMN_EXISTS.md     │
+│ I want to test first               │ test_migration_fix.py          │
+│ I want automated fix               │ fix_partial_migrations.py      │
+│ I have multiple issues             │ fix_all_partial_migrations.py  │
+│ I want complete documentation      │ MIGRATION_ISSUE_COMPLETE_...md │
+│ I want production commands         │ PRODUCTION_MIGRATION_FIX.md    │
+│ I want to understand everything    │ MIGRATION_FIX_GUIDE.md         │
+└──────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+
+                    SUCCESS CHECKLIST
+
+After fixing, verify these:
+
+□ python manage.py showmigrations
+  → All migrations show [X]
+
+□ python manage.py makemigrations
+  → Shows "No changes detected"
+
+□ python manage.py migrate
+  → Shows "No migrations to apply"
+
+□ Test your application
+  → Everything works
+
+□ Check database operations
+  → Can create/edit/delete records
+
+If all checked: ✓ SUCCESS! You're done!
+
+
+═══════════════════════════════════════════════════════════════════════
+
+                    PREVENTION TIPS
+
+To avoid this in the future:
+
+1. Always use Django migrations
+   python manage.py makemigrations
+   python manage.py migrate
+
+2. Keep migration files in version control
+   git add */migrations/*.py
+   git commit -m "Add migrations"
+
+3. When deploying with existing data
+   python manage.py migrate --fake-initial
+
+4. Document your process
+   Keep track of what you do
+
+5. Backup regularly
+   Database + migration records
+
+
+═══════════════════════════════════════════════════════════════════════
+
+                    SUMMARY
+
+Your Error: column "device_id" already exists
+
+Quick Fix:
+  python manage.py migrate assets 0002 --fake
+  python manage.py migrate
+
+Verify:
+  python manage.py showmigrations
+
+Done! ✓
+
+
+═══════════════════════════════════════════════════════════════════════

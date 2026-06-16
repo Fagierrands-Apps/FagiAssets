@@ -1,0 +1,273 @@
+================================================================================
+                    FagiCRM - Quick Reference Card
+                         fagicrm.fagitone.com
+================================================================================
+
+DEPLOYMENT IN 6 COMMANDS:
+-------------------------
+1. cd ~/fagicrm.fagitone.com
+2. chmod +x quick_setup.sh
+3. ./quick_setup.sh
+4. ./cpanel_deploy.sh
+5. python manage.py createsuperuser
+6. [Restart app in cPanel]
+
+IMPORTANT URLS:
+--------------
+Website:   https://fagicrm.fagitone.com
+Admin:     https://fagicrm.fagitone.com/admin/
+Dashboard: https://fagicrm.fagitone.com/dashboard/
+
+ESSENTIAL COMMANDS:
+------------------
+# Activate virtual environment
+source ~/virtualenv/fagicrm.fagitone.com/3.9/bin/activate
+
+# Run migrations
+python manage.py migrate
+
+# Collect static files
+python manage.py collectstatic --noinput
+
+# Create admin user
+python manage.py createsuperuser
+
+# Check for errors
+python manage.py check
+
+# View error log
+tail -f django_errors.log
+
+# Database shell
+python manage.py dbshell
+
+# Django shell
+python manage.py shell
+
+FILE PERMISSIONS:
+----------------
+# Fix all permissions
+find . -type d -exec chmod 755 {} \;
+find . -type f -exec chmod 644 {} \;
+chmod +x *.sh
+chmod -R 777 media
+
+TROUBLESHOOTING:
+---------------
+500 Error:
+  → Check django_errors.log
+  → Verify .env database credentials
+  → Check ALLOWED_HOSTS
+  → Restart app in cPanel
+
+No CSS:
+  → python manage.py collectstatic --noinput --clear
+  → chmod -R 755 staticfiles
+  → Restart app
+
+Database Error:
+  → Check database name has username prefix
+  → Verify user has ALL PRIVILEGES
+  → Test: python manage.py dbshell
+
+Module Not Found:
+  → pip install -r requirements.txt --force-reinstall
+  → Restart app
+
+CONFIGURATION FILES:
+-------------------
+.env                    → Environment variables (MUST CONFIGURE!)
+.htaccess              → Apache config (update username)
+passenger_wsgi.py      → WSGI entry point
+requirements.txt       → Python dependencies
+fagicrm/settings_production.py → Production settings
+
+MUST CONFIGURE IN .env:
+----------------------
+SECRET_KEY=your-unique-random-key
+DEBUG=False
+ALLOWED_HOSTS=fagicrm.fagitone.com,www.fagicrm.fagitone.com
+DB_NAME=yourusername_fagicrm
+DB_USER=yourusername_fagicrm_user
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=3306
+
+DATABASE SETUP (cPanel):
+-----------------------
+1. cPanel → MySQL Databases
+2. Create Database: fagicrm
+3. Create User: fagicrm_user (set password)
+4. Add User to Database (ALL PRIVILEGES)
+5. Note: Names will be prefixed with your username
+
+PYTHON APP SETUP (cPanel):
+--------------------------
+1. cPanel → Setup Python App
+2. Create Application
+3. Python Version: 3.9+
+4. App Root: /home/yourusername/fagicrm.fagitone.com
+5. Startup File: passenger_wsgi.py
+6. Entry Point: application
+
+BACKUP COMMANDS:
+---------------
+# Database backup
+mysqldump -u yourusername_fagicrm_user -p yourusername_fagicrm > backup.sql
+
+# Restore database
+mysql -u yourusername_fagicrm_user -p yourusername_fagicrm < backup.sql
+
+# Media backup
+tar -czf media_backup.tar.gz media/
+
+# Restore media
+tar -xzf media_backup.tar.gz
+
+UPDATE PROCEDURE:
+----------------
+1. Backup database
+2. Upload new files
+3. source ~/virtualenv/fagicrm.fagitone.com/3.9/bin/activate
+4. pip install -r requirements.txt
+5. python manage.py migrate
+6. python manage.py collectstatic --noinput
+7. Restart app in cPanel
+
+LOG FILES:
+---------
+Django errors:  ~/fagicrm.fagitone.com/django_errors.log
+Apache errors:  ~/logs/error_log
+Access log:     ~/logs/access_log
+
+SECURITY CHECKLIST:
+------------------
+[ ] SECRET_KEY changed to unique value
+[ ] DEBUG=False
+[ ] ALLOWED_HOSTS configured
+[ ] Strong database password
+[ ] SSL certificate installed
+[ ] File permissions correct (755/644)
+[ ] .env not publicly accessible
+
+TESTING CHECKLIST:
+-----------------
+[ ] Homepage loads
+[ ] Admin panel accessible
+[ ] Can login
+[ ] Static files loading (CSS/JS)
+[ ] Dashboard works
+[ ] Can create customers
+[ ] Can create employees
+[ ] Can create services
+[ ] No errors in logs
+
+SUPPORT RESOURCES:
+-----------------
+START_HERE.md              → Quick start guide
+CPANEL_DEPLOYMENT.md       → Complete deployment guide
+DEPLOYMENT_CHECKLIST.txt   → Step-by-step checklist
+DEPLOYMENT_SUMMARY.md      → Package overview
+
+COMMON PATHS:
+------------
+Application:     ~/fagicrm.fagitone.com
+Virtual Env:     ~/virtualenv/fagicrm.fagitone.com/3.9
+Static Files:    ~/fagicrm.fagitone.com/staticfiles
+Media Files:     ~/fagicrm.fagitone.com/media
+Logs:            ~/logs/
+
+RESTART APPLICATION:
+-------------------
+cPanel → Setup Python App → Find your app → Click Restart button
+
+GENERATE SECRET KEY:
+-------------------
+python generate_secret_key.py
+
+OR
+
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+SYSTEM INFO:
+-----------
+Framework:  Django 4.2.7
+Python:     3.8+ (3.9+ recommended)
+Database:   MySQL/MariaDB
+Timezone:   Africa/Nairobi (EAT, UTC+3)
+Domain:     fagicrm.fagitone.com
+
+QUICK DIAGNOSIS:
+---------------
+# Check Python version
+python --version
+
+# Check Django version
+python -c "import django; print(django.get_version())"
+
+# Check database connection
+python manage.py dbshell
+
+# Check installed packages
+pip list
+
+# Check Django configuration
+python manage.py check
+
+# Check migrations status
+python manage.py showmigrations
+
+# Test database query
+python manage.py shell -c "from django.contrib.auth.models import User; print(User.objects.count())"
+
+EMERGENCY FIXES:
+---------------
+# If app won't start
+1. Check django_errors.log
+2. Verify .env file exists and is correct
+3. Check database credentials
+4. Reinstall dependencies: pip install -r requirements.txt
+5. Restart app in cPanel
+
+# If static files missing
+1. python manage.py collectstatic --noinput --clear
+2. chmod -R 755 staticfiles
+3. Check .htaccess configuration
+4. Restart app
+
+# If database errors
+1. Verify database exists in cPanel
+2. Check user has privileges
+3. Test connection: python manage.py dbshell
+4. Check .env credentials match cPanel
+
+# If permission errors
+1. find . -type d -exec chmod 755 {} \;
+2. find . -type f -exec chmod 644 {} \;
+3. chmod -R 777 media
+4. chmod +x *.sh
+
+DEPLOYMENT TIME:
+---------------
+Database Setup:     5 minutes
+Python App Setup:   5 minutes
+File Upload:        5 minutes
+Configuration:      10 minutes
+Deployment:         5 minutes
+Testing:            5 minutes
+TOTAL:             ~35 minutes
+
+SUCCESS INDICATORS:
+------------------
+✓ Website loads without errors
+✓ Admin panel accessible
+✓ Can login with superuser
+✓ CSS and JavaScript loading
+✓ Dashboard displays correctly
+✓ Can perform CRUD operations
+✓ No errors in django_errors.log
+✓ HTTPS working (if configured)
+
+================================================================================
+Print this page for quick reference during deployment!
+================================================================================

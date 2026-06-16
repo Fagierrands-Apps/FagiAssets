@@ -1,0 +1,285 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    cPanel DEPLOYMENT CHECKLIST                                ║
+║                    Domain: fagicrm.fagitone.com                              ║
+║                    User: distinc3                                            ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 1: PRE-DEPLOYMENT PREPARATION                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+[ ] 1. Generate new SECRET_KEY
+    Command: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+    
+[ ] 2. Update .env file with new SECRET_KEY
+    File: /fagiassets/.env
+    Line: SECRET_KEY=your-new-key-here
+    
+[ ] 3. Verify database credentials in .env
+    - DB_HOST: aws-0-ap-southeast-1.pooler.supabase.com
+    - DB_PORT: 6543
+    - DB_NAME: postgres
+    - DB_USER: postgres.dxesmzogjpxswxhsomgf
+    - DB_PASSWORD: OnFRtf0SmpHwgNaQ
+    
+[ ] 4. Verify domain in .env
+    ALLOWED_HOSTS=fagicrm.fagitone.com,www.fagicrm.fagitone.com
+    
+[ ] 5. Ensure DEBUG=False in .env
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 2: CPANEL SETUP                                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+[ ] 6. Login to cPanel
+    URL: https://your-hosting-provider.com:2083
+    
+[ ] 7. Navigate to "Setup Python App"
+    Location: Software section
+    
+[ ] 8. Click "Create Application"
+    
+[ ] 9. Configure Python Application:
+    [ ] Python Version: 3.11
+    [ ] Application Root: /home/distinc3/fagiassets
+    [ ] Application URL: / (or leave blank)
+    [ ] Application Startup File: passenger_wsgi.py
+    [ ] Application Entry Point: application
+    
+[ ] 10. Click "Create" and wait for completion
+    
+[ ] 11. Note the virtual environment path
+    Expected: /home/distinc3/virtualenv/fagiassets/3.11
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 3: FILE UPLOAD                                                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Choose ONE method:
+
+METHOD A: Git (Recommended)
+[ ] 12a. SSH into server
+    Command: ssh distinc3@fagicrm.fagitone.com
+    
+[ ] 13a. Clone repository
+    Command: cd ~ && git clone https://github.com/yourusername/fagiassets.git
+
+METHOD B: FTP/SFTP
+[ ] 12b. Connect via FTP client (FileZilla, etc.)
+    Host: fagicrm.fagitone.com
+    Username: distinc3
+    Port: 21 (FTP) or 22 (SFTP)
+    
+[ ] 13b. Upload all files to /home/distinc3/fagiassets
+    
+[ ] 14b. Ensure hidden files uploaded:
+    [ ] .htaccess
+    [ ] .env
+    [ ] .gitignore
+
+METHOD C: cPanel File Manager
+[ ] 12c. Go to File Manager in cPanel
+    
+[ ] 13c. Navigate to home directory
+    
+[ ] 14c. Upload project as ZIP file
+    
+[ ] 15c. Right-click ZIP and select "Extract"
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 4: DEPLOYMENT                                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+[ ] 16. SSH into server
+    Command: ssh distinc3@fagicrm.fagitone.com
+    
+[ ] 17. Navigate to project directory
+    Command: cd ~/fagiassets
+    
+[ ] 18. Make deployment script executable
+    Command: chmod +x cpanel_deploy.sh
+    
+[ ] 19. Run deployment script
+    Command: ./cpanel_deploy.sh
+    
+[ ] 20. Wait for deployment to complete
+    Watch for: "✓ Deployment completed successfully!"
+    
+[ ] 21. Check for any errors in output
+    If errors, check logs: tail -f ~/logs/error_log
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 5: APPLICATION RESTART                                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+[ ] 22. Go back to cPanel
+    
+[ ] 23. Navigate to "Setup Python App"
+    
+[ ] 24. Find your application (fagiassets)
+    
+[ ] 25. Click the "Restart" button (circular arrow icon)
+    
+[ ] 26. Wait for restart to complete (10-30 seconds)
+    Status should show "Running"
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 6: TESTING                                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+[ ] 27. Test main site
+    URL: https://fagicrm.fagitone.com
+    Expected: Site loads without errors
+    
+[ ] 28. Test HTTPS redirect
+    URL: http://fagicrm.fagitone.com
+    Expected: Redirects to https://
+    
+[ ] 29. Test login page
+    URL: https://fagicrm.fagitone.com/login/
+    Expected: Login form displays
+    
+[ ] 30. Test admin login
+    URL: https://fagicrm.fagitone.com/admin/
+    Username: admin
+    Password: FagiAssets2024!
+    Expected: Successfully logs in
+    
+[ ] 31. Check static files loading
+    Expected: CSS and JavaScript working
+    Check: Browser developer tools (F12) → Network tab
+    
+[ ] 32. Test creating a record
+    Expected: Can create/edit/delete records
+    
+[ ] 33. Test file upload (if applicable)
+    Expected: Can upload files to media folder
+    
+[ ] 34. Check database connection
+    Expected: Data persists after refresh
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 7: SECURITY                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+[ ] 35. Change admin password
+    Command: cd ~/fagiassets/assetmanagement && python manage.py changepassword admin
+    
+[ ] 36. Verify SSL certificate
+    URL: https://fagicrm.fagitone.com
+    Check: Padlock icon in browser
+    
+[ ] 37. Test security headers
+    Tool: https://securityheaders.com
+    URL: https://fagicrm.fagitone.com
+    
+[ ] 38. Verify .env file permissions
+    Command: ls -la ~/fagiassets/.env
+    Expected: -rw-r--r-- (644)
+    
+[ ] 39. Check sensitive files are protected
+    Try accessing: https://fagicrm.fagitone.com/.env
+    Expected: 403 Forbidden or 404 Not Found
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 8: POST-DEPLOYMENT                                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+[ ] 40. Setup database backups
+    Method: cPanel → Backup Wizard
+    
+[ ] 41. Configure email settings (if needed)
+    File: .env
+    Section: EMAIL SETTINGS
+    
+[ ] 42. Setup monitoring/alerts (optional)
+    Tool: UptimeRobot, Pingdom, etc.
+    
+[ ] 43. Document any custom configurations
+    
+[ ] 44. Create additional admin users (if needed)
+    Command: cd ~/fagiassets/assetmanagement && python manage.py createsuperuser
+    
+[ ] 45. Test all major features
+    [ ] User authentication
+    [ ] Asset management
+    [ ] Reports/exports
+    [ ] QR code generation
+    [ ] Employee management
+    [ ] CRM features
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ TROUBLESHOOTING QUICK REFERENCE                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+500 Internal Server Error:
+→ tail -f ~/logs/error_log
+
+Static files not loading:
+→ cd ~/fagiassets/assetmanagement
+→ python manage.py collectstatic --noinput --clear
+→ Restart app in cPanel
+
+Database connection error:
+→ Check .env file: cat ~/fagiassets/.env | grep DB_
+→ Test: cd ~/fagiassets/assetmanagement && python manage.py check --database default
+
+Permission denied:
+→ chmod -R 755 ~/fagiassets
+→ chmod -R 775 ~/fagiassets/assetmanagement/media
+
+Module not found:
+→ source ~/virtualenv/fagiassets/3.11/bin/activate
+→ pip install -r ~/fagiassets/requirements.txt
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ IMPORTANT INFORMATION                                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Domain:           https://fagicrm.fagitone.com
+Admin URL:        https://fagicrm.fagitone.com/admin/
+Login URL:        https://fagicrm.fagitone.com/login/
+
+Default Credentials:
+  Username:       admin
+  Password:       FagiAssets2024!
+  Email:          admin@fagicrm.fagitone.com
+
+Paths:
+  Project:        /home/distinc3/fagiassets
+  Virtual Env:    /home/distinc3/virtualenv/fagiassets/3.11
+  Django:         /home/distinc3/fagiassets/assetmanagement
+  Static:         /home/distinc3/fagiassets/assetmanagement/staticfiles
+  Media:          /home/distinc3/fagiassets/assetmanagement/media
+  Logs:           ~/logs/error_log
+
+Important Files:
+  .htaccess                          → Apache configuration
+  .env                               → Environment variables
+  passenger_wsgi.py                  → WSGI entry point
+  cpanel_deploy.sh                   → Deployment script
+
+Documentation:
+  CPANEL_DEPLOYMENT_INSTRUCTIONS.md  → Full deployment guide
+  CPANEL_QUICK_REFERENCE.md          → Quick command reference
+  DEPLOYMENT_READY.md                → Configuration summary
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ COMPLETION                                                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+[ ] All checklist items completed
+[ ] Application is live and working
+[ ] Admin password changed
+[ ] Backups configured
+[ ] Team notified
+
+Deployment Date: _______________
+Deployed By: _______________
+Notes: _________________________________________________________________
+       _________________________________________________________________
+       _________________________________________________________________
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    DEPLOYMENT SUCCESSFUL! 🎉                                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝

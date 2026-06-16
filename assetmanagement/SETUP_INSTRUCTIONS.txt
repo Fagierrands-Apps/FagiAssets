@@ -1,0 +1,151 @@
+================================================================================
+EMPLOYEE PORTAL - AUTO CLOCK-OUT SETUP INSTRUCTIONS
+================================================================================
+
+WHAT WAS FIXED:
+---------------
+1. ✅ Timesheet template error (Invalid filter: 'div') - FIXED
+2. ✅ Automatic clock-out at 1:30 PM (lunch break) - IMPLEMENTED
+3. ✅ Automatic clock-out at 10:00 PM (end of day) - IMPLEMENTED
+
+================================================================================
+QUICK SETUP (3 STEPS)
+================================================================================
+
+STEP 1: Test the Timesheet
+---------------------------
+1. Start server: python manage.py runserver
+2. Open: http://127.0.0.1:8000/crm/employee/timesheet/
+3. Verify: Page loads without errors ✅
+
+STEP 2: Test Auto Clock-Out
+----------------------------
+Run this command:
+    python manage.py auto_clockout --force
+
+You should see a summary of clock-outs!
+
+STEP 3: Setup Scheduled Tasks (IMPORTANT!)
+-------------------------------------------
+Right-click PowerShell and select "Run as Administrator", then:
+
+    cd c:\Users\a\Documents\GitHub\fagiassets\assetmanagement
+    .\setup_auto_clockout.ps1
+
+This creates two scheduled tasks:
+- Daily at 1:30 PM: Auto clock-out for lunch + re-clock-in
+- Daily at 10:00 PM: Auto clock-out for end of day
+
+================================================================================
+HOW IT WORKS
+================================================================================
+
+1:30 PM - LUNCH BREAK:
+----------------------
+- All clocked-in employees are automatically clocked out
+- They are immediately clocked back in (1 second later)
+- Work continues seamlessly
+- Lunch break is properly tracked
+
+10:00 PM - END OF DAY:
+----------------------
+- All clocked-in employees are automatically clocked out
+- Work session is marked as complete
+- Employees must manually clock in the next day
+
+================================================================================
+VERIFY SETUP
+================================================================================
+
+Check if tasks were created:
+    Get-ScheduledTask -TaskName "CRM Auto Clock-Out*"
+
+You should see:
+- CRM Auto Clock-Out Lunch
+- CRM Auto Clock-Out End of Day
+
+================================================================================
+TESTING
+================================================================================
+
+Test lunch clock-out:
+    python manage.py auto_clockout --time 13:30
+
+Test end-of-day clock-out:
+    python manage.py auto_clockout --time 22:00
+
+Run full test:
+    python test_auto_clockout.py
+
+================================================================================
+VIEW RESULTS
+================================================================================
+
+Admin Panel:
+- Time Entries: http://127.0.0.1:8000/admin/crm/timeentry/
+- Work Sessions: http://127.0.0.1:8000/admin/crm/worksession/
+
+Employee Portal:
+- Timesheet: http://127.0.0.1:8000/crm/employee/timesheet/
+
+Look for entries with:
+- Location: "System Auto Clock-Out"
+- Notes: "Automatic clock-out for lunch break" or "Automatic end-of-day clock-out"
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: "Access Denied" when creating tasks
+Solution: Run PowerShell as Administrator
+
+Problem: Tasks not running
+Solution: 
+1. Open Task Scheduler (taskschd.msc)
+2. Find "CRM Auto Clock-Out" tasks
+3. Check "History" tab for errors
+4. Verify Python path is correct
+
+Problem: Employees not being clocked out
+Solution:
+1. Verify employees are clocked in
+2. Check employee status is 'active'
+3. Run: python manage.py auto_clockout --force
+
+================================================================================
+DOCUMENTATION
+================================================================================
+
+For detailed information, see:
+- QUICK_SETUP_GUIDE.md - Quick start guide
+- AUTO_CLOCKOUT_SYSTEM.md - Complete documentation
+- TIMESHEET_FIX.md - Template fix details
+- EMPLOYEE_PORTAL_FIXES.md - Full implementation guide
+
+================================================================================
+SUPPORT
+================================================================================
+
+Command Reference:
+- python manage.py help auto_clockout
+- python manage.py check
+- python test_auto_clockout.py
+
+Task Management:
+- Get-ScheduledTask -TaskName "CRM Auto Clock-Out*"
+- Unregister-ScheduledTask -TaskName "CRM Auto Clock-Out Lunch" -Confirm:$false
+
+================================================================================
+DONE! 🎉
+================================================================================
+
+Your employee portal now has:
+✅ Working timesheet (no template errors)
+✅ Automatic lunch break clock-out at 1:30 PM
+✅ Automatic end-of-day clock-out at 10:00 PM
+✅ Accurate time tracking
+✅ Proper work session calculations
+
+Next: Run the setup script as Administrator to enable automatic scheduling!
+
+================================================================================

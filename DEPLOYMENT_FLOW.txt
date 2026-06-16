@@ -1,0 +1,383 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    CPANEL DEPLOYMENT FLOW DIAGRAM                            ║
+║                    Domain: fagicrm.fagitone.com                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 1: PREPARATION (Local Machine)                                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    [Your Computer]
+         │
+         ├─→ Generate SECRET_KEY
+         │   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+         │
+         ├─→ Update .env file
+         │   SECRET_KEY=your-new-key-here
+         │
+         ├─→ Verify configurations
+         │   • Domain: fagicrm.fagitone.com
+         │   • Database: Supabase credentials
+         │   • DEBUG=False
+         │
+         └─→ Commit changes (optional)
+             git add .
+             git commit -m "Configure for cPanel deployment"
+             git push origin main
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 2: CPANEL SETUP (Web Browser)                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    [cPanel Dashboard]
+         │
+         ├─→ Login to cPanel
+         │   https://your-hosting-provider.com:2083
+         │
+         ├─→ Navigate to "Setup Python App"
+         │   (Software section)
+         │
+         ├─→ Click "Create Application"
+         │
+         └─→ Configure:
+             ┌─────────────────────────────────────┐
+             │ Python Version: 3.11                │
+             │ App Root: /home/distinc3/fagiassets │
+             │ App URL: /                          │
+             │ Startup: passenger_wsgi.py          │
+             │ Entry Point: application            │
+             └─────────────────────────────────────┘
+                      │
+                      ├─→ Click "Create"
+                      │
+                      └─→ Note Virtual Env Path
+                          /home/distinc3/virtualenv/fagiassets/3.11
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 3: FILE UPLOAD (Choose One Method)                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    METHOD A: Git (Recommended)
+    ────────────────────────────
+    [Your Computer] ──SSH──→ [cPanel Server]
+                                    │
+                                    ├─→ ssh distinc3@fagicrm.fagitone.com
+                                    │
+                                    ├─→ cd ~
+                                    │
+                                    └─→ git clone https://github.com/user/fagiassets.git
+                                        
+                                        /home/distinc3/fagiassets/
+                                        ├── .htaccess
+                                        ├── .env
+                                        ├── passenger_wsgi.py
+                                        ├── cpanel_deploy.sh
+                                        ├── requirements.txt
+                                        └── assetmanagement/
+
+    METHOD B: FTP/SFTP
+    ──────────────────
+    [Your Computer] ──FTP──→ [cPanel Server]
+         │                          │
+         └─→ FileZilla/WinSCP      └─→ /home/distinc3/fagiassets/
+             Upload all files           (Ensure hidden files uploaded)
+
+    METHOD C: cPanel File Manager
+    ─────────────────────────────
+    [Your Computer] ──Upload ZIP──→ [cPanel File Manager]
+                                           │
+                                           ├─→ Upload fagiassets.zip
+                                           │
+                                           └─→ Extract to /home/distinc3/
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 4: DEPLOYMENT (SSH Terminal)                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    [SSH Terminal]
+         │
+         ├─→ ssh distinc3@fagicrm.fagitone.com
+         │
+         ├─→ cd ~/fagiassets
+         │
+         ├─→ chmod +x cpanel_deploy.sh
+         │
+         └─→ ./cpanel_deploy.sh
+             
+             [Deployment Script Execution]
+                      │
+                      ├─→ ✓ Check .env file
+                      │
+                      ├─→ ✓ Activate virtual environment
+                      │   source ~/virtualenv/fagiassets/3.11/bin/activate
+                      │
+                      ├─→ ✓ Upgrade pip
+                      │
+                      ├─→ ✓ Install dependencies
+                      │   pip install -r requirements.txt
+                      │
+                      ├─→ ✓ Test database connection
+                      │   python manage.py check --database default
+                      │
+                      ├─→ ✓ Run migrations
+                      │   python manage.py migrate
+                      │
+                      ├─→ ✓ Create cache table
+                      │   python manage.py createcachetable
+                      │
+                      ├─→ ✓ Collect static files
+                      │   python manage.py collectstatic
+                      │
+                      ├─→ ✓ Create admin user
+                      │   Username: admin
+                      │   Password: FagiAssets2024!
+                      │
+                      ├─→ ✓ Set permissions
+                      │   chmod 755 directories
+                      │   chmod 644 files
+                      │   chmod 775 media/staticfiles
+                      │
+                      ├─→ ✓ Create directories
+                      │   media/qr_codes
+                      │   media/employee_ids
+                      │   logs/
+                      │
+                      └─→ ✓ Validate configuration
+                          python manage.py check
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 5: APPLICATION START (cPanel Dashboard)                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    [cPanel Dashboard]
+         │
+         ├─→ Navigate to "Setup Python App"
+         │
+         ├─→ Find application: fagiassets
+         │
+         ├─→ Click "Restart" button (↻)
+         │
+         └─→ Wait for restart (10-30 seconds)
+             
+             [Passenger Process]
+                      │
+                      ├─→ Load passenger_wsgi.py
+                      │
+                      ├─→ Load .env file
+                      │
+                      ├─→ Initialize Django
+                      │
+                      └─→ Application Running ✓
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 6: REQUEST FLOW (Production)                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    [User Browser]
+         │
+         └─→ https://fagicrm.fagitone.com
+                      │
+                      ↓
+             [Apache Web Server]
+                      │
+                      ├─→ Check .htaccess
+                      │   • Force HTTPS ✓
+                      │   • Add security headers ✓
+                      │   • Enable compression ✓
+                      │
+                      ├─→ Static files? (/static/*)
+                      │   YES → Serve directly from Apache
+                      │   └─→ /home/distinc3/fagiassets/assetmanagement/staticfiles/
+                      │
+                      ├─→ Media files? (/media/*)
+                      │   YES → Serve directly from Apache
+                      │   └─→ /home/distinc3/fagiassets/assetmanagement/media/
+                      │
+                      └─→ Dynamic request?
+                          YES → Pass to Passenger
+                                      │
+                                      ↓
+                          [Passenger (Python App Server)]
+                                      │
+                                      ├─→ Load passenger_wsgi.py
+                                      │
+                                      ├─→ Load environment (.env)
+                                      │
+                                      └─→ Pass to Django
+                                                  │
+                                                  ↓
+                                      [Django Application]
+                                                  │
+                                                  ├─→ URL routing
+                                                  │
+                                                  ├─→ View processing
+                                                  │
+                                                  ├─→ Database query
+                                                  │   (Supabase PostgreSQL)
+                                                  │
+                                                  ├─→ Template rendering
+                                                  │
+                                                  └─→ Return response
+                                                          │
+                                                          ↓
+                                      [User Browser]
+                                      Displays page ✓
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 7: TESTING & VERIFICATION                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    [Testing Checklist]
+         │
+         ├─→ Test main site
+         │   https://fagicrm.fagitone.com
+         │   Expected: Site loads ✓
+         │
+         ├─→ Test HTTPS redirect
+         │   http://fagicrm.fagitone.com
+         │   Expected: Redirects to https:// ✓
+         │
+         ├─→ Test login
+         │   https://fagicrm.fagitone.com/login/
+         │   Expected: Login form displays ✓
+         │
+         ├─→ Test admin panel
+         │   https://fagicrm.fagitone.com/admin/
+         │   Username: admin
+         │   Password: FagiAssets2024!
+         │   Expected: Successfully logs in ✓
+         │
+         ├─→ Test static files
+         │   Check: CSS, JavaScript, images
+         │   Expected: All loading correctly ✓
+         │
+         ├─→ Test database operations
+         │   Create/Read/Update/Delete
+         │   Expected: All working ✓
+         │
+         └─→ Test file uploads
+             Upload to media folder
+             Expected: Files saved correctly ✓
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 8: MAINTENANCE & UPDATES                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    [Update Workflow]
+         │
+         ├─→ Make code changes locally
+         │
+         ├─→ Test locally
+         │
+         ├─→ Commit to Git
+         │   git commit -m "Update feature"
+         │   git push origin main
+         │
+         ├─→ SSH to server
+         │   ssh distinc3@fagicrm.fagitone.com
+         │
+         ├─→ Pull changes
+         │   cd ~/fagiassets
+         │   git pull origin main
+         │
+         ├─→ Run deployment script
+         │   ./cpanel_deploy.sh
+         │
+         └─→ Restart application
+             cPanel → Setup Python App → Restart
+             
+             OR
+             
+             touch ~/fagiassets/passenger_wsgi.py
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ TROUBLESHOOTING FLOW                                                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    [Issue Detected]
+         │
+         ├─→ 500 Internal Server Error
+         │   └─→ Check logs: tail -f ~/logs/error_log
+         │       ├─→ Database error? → Check .env credentials
+         │       ├─→ Module error? → Reinstall: pip install -r requirements.txt
+         │       └─→ Permission error? → Fix: chmod -R 755 ~/fagiassets
+         │
+         ├─→ Static files not loading
+         │   └─→ Collect static: python manage.py collectstatic --noinput
+         │       └─→ Restart app in cPanel
+         │
+         ├─→ Database connection error
+         │   └─→ Test: python manage.py check --database default
+         │       ├─→ Check Supabase credentials in .env
+         │       └─→ Verify Supabase allows server IP
+         │
+         └─→ Application not starting
+             └─→ Check passenger_wsgi.py
+                 ├─→ Verify paths are correct
+                 ├─→ Check .env file exists
+                 └─→ Review error logs
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ FILE STRUCTURE ON SERVER                                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    /home/distinc3/
+         │
+         ├── fagiassets/                          ← Project root
+         │   ├── .htaccess                        ← Apache config
+         │   ├── .env                             ← Environment variables
+         │   ├── passenger_wsgi.py                ← WSGI entry point
+         │   ├── cpanel_deploy.sh                 ← Deployment script
+         │   ├── requirements.txt                 ← Dependencies
+         │   │
+         │   └── assetmanagement/                 ← Django project
+         │       ├── manage.py
+         │       ├── assetmanager/                ← Settings
+         │       ├── assets/                      ← Apps
+         │       ├── users/
+         │       ├── crm/
+         │       ├── staticfiles/                 ← Collected static
+         │       ├── media/                       ← User uploads
+         │       └── templates/                   ← HTML templates
+         │
+         ├── virtualenv/                          ← Virtual environments
+         │   └── fagiassets/
+         │       └── 3.11/                        ← Python 3.11 venv
+         │           ├── bin/
+         │           │   └── python               ← Python interpreter
+         │           └── lib/
+         │               └── python3.11/
+         │                   └── site-packages/   ← Installed packages
+         │
+         ├── logs/                                ← Log files
+         │   ├── error_log                        ← Apache errors
+         │   └── access_log                       ← Apache access
+         │
+         └── public_html/                         ← Web root (if needed)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ QUICK REFERENCE                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+    Deploy/Update:
+    $ cd ~/fagiassets && ./cpanel_deploy.sh
+
+    View Logs:
+    $ tail -f ~/logs/error_log
+
+    Restart App:
+    $ touch ~/fagiassets/passenger_wsgi.py
+
+    Collect Static:
+    $ cd ~/fagiassets/assetmanagement && python manage.py collectstatic --noinput
+
+    Django Shell:
+    $ cd ~/fagiassets/assetmanagement && python manage.py shell
+
+    Check Status:
+    $ cd ~/fagiassets/assetmanagement && python manage.py check
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    DEPLOYMENT COMPLETE! 🎉                                   ║
+║                    Visit: https://fagicrm.fagitone.com                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
