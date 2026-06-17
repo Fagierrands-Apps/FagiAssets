@@ -94,15 +94,15 @@ WSGI_APPLICATION = 'assetmanager.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Always use Supabase PostgreSQL database
+# Database configuration - reads from environment variables or uses defaults
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.dxesmzogjpxswxhsomgf',
-        'PASSWORD': 'OnFRtf0SmpHwgNaQ',
-        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
-        'PORT': '6543',
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.environ.get('DB_NAME', 'postgres'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'U)5z5zB#8DqrREe'),
+        'HOST': os.environ.get('DB_HOST', 'db.kqvalmeduggynzmlddqx.supabase.co'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
         'OPTIONS': {
             'sslmode': 'require',
             'connect_timeout': 30,
