@@ -29,7 +29,14 @@ import os
 # Set environment variable DEBUG=False for production
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '10.246.23.10', 'fagiassets.vercel.app', '*.vercel.app', '*']
+# Get ALLOWED_HOSTS from environment or use defaults
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '')
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',')]
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '10.246.23.10', 
+                     'fagiassets.vercel.app', '*.vercel.app', 
+                     'fagiassets.fagitone.com', '*.fagitone.com', '*']
 
 
 # Application definition
@@ -94,24 +101,52 @@ WSGI_APPLICATION = 'assetmanager.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Database configuration - reads from environment variables or uses defaults
+# Always use Supabase PostgreSQL database
 DATABASES = {
+    # PRIMARY: cPanel PostgreSQL
     'default': {
-        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.environ.get('DB_NAME', 'postgres'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'U)5z5zB#8DqrREe'),
-        'HOST': os.environ.get('DB_HOST', 'db.kqvalmeduggynzmlddqx.supabase.co'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'distinc3_crm'),
+        'USER': os.environ.get('DB_USER', 'distinc3_crm2'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'Pa7swrd1990@'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '5432'),
+        'OPTIONS': {
+            'connect_timeout': 30,
+        },
+        'CONN_MAX_AGE': 600,
+    },
+    
+    # BACKUP: Old Supabase (temporary backup until IPv6 fixed)
+    'backup': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres.dxesmzogjpxswxhsomgf',
+        'PASSWORD': 'OnFRtf0SmpHwgNaQ',
+        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
+        'PORT': '6543',
         'OPTIONS': {
             'sslmode': 'require',
             'connect_timeout': 30,
-            'options': '-c client_encoding=UTF8'
         },
-        'CONN_MAX_AGE': 0,
-        'DISABLE_SERVER_SIDE_CURSORS': True,
+        'CONN_MAX_AGE': 600,
+    },
+    
+    # NEW SUPABASE: Will switch to this when IPv6 available
+    'new_supabase': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'U)5z5zB#8DqrREe',
+        'HOST': 'db.kqvalmeduggynzmlddqx.supabase.co',
+        'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require',
+            'connect_timeout': 30,
+        },
     }
 }
+
 
 
 # Password validation
@@ -152,13 +187,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Only add STATICFILES_DIRS if the directory exists
-static_dir = BASE_DIR / 'static'
-if static_dir.exists():
-    STATICFILES_DIRS = [static_dir]
-else:
-    STATICFILES_DIRS = []
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 # Use WhiteNoise for static files in production
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')

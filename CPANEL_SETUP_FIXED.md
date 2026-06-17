@@ -1,226 +1,185 @@
-# cPanel Deployment - Fixed Version
+# cPanel Deployment Guide - New Supabase Database
 
-## Prerequisites
-- cPanel account (you have this ✅)
-- Your own Supabase database (create above ☝️)
-- SSH access (optional but helpful)
+## ✅ What's Configured
 
----
+Your application is now configured to use YOUR NEW Supabase database:
+- **Host**: db.kqvalmeduggynzmlddqx.supabase.co
+- **Database**: postgres
+- **User**: postgres
+- **Password**: U)5z5zB#8DqrREe
 
-## Quick Setup (15 minutes)
+## 📋 Deployment Steps
 
-### 1. Update passenger_wsgi.py
-
-Replace the current one with this fixed version:
-
-```python
-import os
-import sys
-from pathlib import Path
-
-# Project paths
-project_home = os.path.dirname(os.path.abspath(__file__))
-project_dir = os.path.join(project_home, 'assetmanagement')
-
-# Add to path
-sys.path.insert(0, project_home)
-sys.path.insert(0, project_dir)
-
-# Set Django settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'assetmanager.settings')
-os.environ['DEBUG'] = 'False'
-
-# Load environment variables
-from dotenv import load_dotenv
-load_dotenv(os.path.join(project_home, '.env'))
-
-# Import Django
-from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
-```
-
-### 2. Create .env file in root directory
-
-```env
-# Django Settings
-SECRET_KEY=your-new-secret-key-here-change-this
-DEBUG=False
-ALLOWED_HOSTS=yourdomain.com,www.yourdomain.com
-
-# Your NEW Supabase Database
-DB_ENGINE=django.db.backends.postgresql
-DB_NAME=postgres
-DB_USER=postgres.xxxxxxxxxxxxx
-DB_PASSWORD=your-supabase-password
-DB_HOST=aws-0-ap-southeast-1.pooler.supabase.com
-DB_PORT=6543
-
-# App Settings  
-DJANGO_SETTINGS_MODULE=assetmanager.settings
-```
-
-### 3. Update settings.py to read from .env
-
-Add this at the top of `assetmanagement/assetmanager/settings.py`:
-
-```python
-from decouple import config
-import os
-
-# Read from environment
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-)uydf_yg5c=z5^)xi+&$1@y$7w@)lboa2l#eom$!4uk1l!22u0')
-DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
-
-# Database from environment
-DATABASES = {
-    'default': {
-        'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
-        'NAME': config('DB_NAME', default='postgres'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT', default='6543'),
-        'OPTIONS': {
-            'sslmode': 'require',
-            'connect_timeout': 30,
-        },
-    }
-}
-```
-
-### 4. Upload to cPanel
-
-**Via FTP/File Manager:**
-1. Upload entire project to `/home/yourusername/fagiassets`
-2. Upload `.env` file with YOUR database credentials
-3. Make sure `passenger_wsgi.py` is in root
-
-**Via Git (better):**
+### 1. Push to GitHub
 ```bash
-ssh yourusername@yourdomain.com
+cd /home/fagitone/Documents/GitHub/FagiAssets
+git push origin main
+```
+
+### 2. Set Up Python Application in cPanel
+
+1. Log into cPanel
+2. Go to **Setup Python App**
+3. Click **Create Application**
+
+Configure:
+- **Python Version**: 3.12
+- **Application Root**: /home/yourusername/FagiAssets
+- **Application URL**: your-domain.com (or subdomain)
+- **Application Startup File**: passenger_wsgi.py
+- **Application Entry Point**: application
+
+### 3. Clone Repository
+
+In cPanel Terminal:
+```bash
 cd ~
-git clone https://github.com/Fagierrands-Apps/FagiAssets.git fagiassets
-cd fagiassets
-nano .env  # Add your credentials
+git clone https://github.com/yourusername/FagiAssets.git
+cd FagiAssets
 ```
 
-### 5. Setup Python App in cPanel
+### 4. Configure Environment
 
-1. Go to **Setup Python App**
-2. Click **Create Application**
-3. Configure:
-   - Python version: 3.11 (or 3.9)
-   - Application root: `/home/yourusername/fagiassets`
-   - Application URL: `/` (or subdomain)
-   - Startup file: `passenger_wsgi.py`
-   - Entry point: `application`
-
-4. Click **Create**
-
-5. In the Python app page, click **Enter to virtual environment**
-
-6. Run setup commands:
+Create `.env` file in cPanel File Manager or terminal:
 ```bash
+nano .env
+```
+
+Paste this content:
+```env
+# Django
+SECRET_KEY=your-secret-key-here
+DEBUG=False
+ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+
+# Database (Supabase)
+DB_NAME=postgres
+DB_USER=postgres
+DB_PASSWORD=U)5z5zB#8DqrREe
+DB_HOST=db.kqvalmeduggynzmlddqx.supabase.co
+DB_PORT=5432
+
+# Supabase
+SUPABASE_URL=https://kqvalmeduggynzmlddqx.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdmFsbWVkdWdneW56bWxkZHF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM5MTk1MzAsImV4cCI6MjA0OTQ5NTUzMH0.3C_u7TZOoxR7iZKP1XVBiETiDLdcCt47p17Z5_l2x5w
+
+# Redis (optional)
+REDIS_URL=redis://127.0.0.1:6379/0
+```
+
+### 5. Install Dependencies
+
+In the Python App interface:
+1. Click **Run Pip Install**
+2. Or in terminal:
+```bash
+source /home/yourusername/virtualenv/FagiAssets/3.12/bin/activate
 pip install -r requirements.txt
-cd assetmanagement
+```
+
+### 6. Run Migrations
+
+```bash
+source /home/yourusername/virtualenv/FagiAssets/3.12/bin/activate
+cd ~/FagiAssets/assetmanagement
 python manage.py migrate
 python manage.py collectstatic --noinput
+```
+
+### 7. Create Superuser
+
+```bash
 python manage.py createsuperuser
 ```
 
-### 6. Configure .htaccess
+### 8. Restart Application
 
-The current .htaccess has hardcoded paths. Update it:
+In cPanel Python App interface, click **Restart**
 
-```apache
-PassengerEnabled On
-PassengerAppRoot /home/YOURUSERNAME/fagiassets
-PassengerPython /home/YOURUSERNAME/virtualenv/fagiassets/3.11/bin/python
+## 🎯 Your New Database Benefits
 
-# Replace YOURUSERNAME with your actual cPanel username
+With your own Supabase database you get:
+
+1. **Full Control** - You own and manage the database
+2. **Free Tier Includes**:
+   - 500MB database space
+   - Unlimited API requests
+   - 50,000 monthly active users
+   - Real-time subscriptions
+   
+3. **Automatic Backups** - Supabase provides daily backups
+4. **Database Dashboard** - Visual interface at supabase.com
+5. **No Data Loss** - Your data is independent of any hosting
+
+## 🔧 Accessing Your Database
+
+### Via Supabase Dashboard
+1. Go to https://supabase.com
+2. Sign in with your account
+3. Select your project
+4. Use Table Editor, SQL Editor, or API
+
+### Direct Connection
+Use these credentials with any PostgreSQL client:
+```
+Host: db.kqvalmeduggynzmlddqx.supabase.co
+Port: 5432
+Database: postgres
+User: postgres
+Password: U)5z5zB#8DqrREe
 ```
 
-### 7. Restart App
+## 📊 Monitoring
 
-In cPanel → Python App → Click **Restart**
+Monitor your database at: https://supabase.com/dashboard/project/kqvalmeduggynzmlddqx
 
----
+Check:
+- Database size
+- API requests
+- Active connections
+- Query performance
 
-## Migration from Old Supabase to Your New One
+## 🚨 Troubleshooting
 
-Once your new database is set up:
-
+### Application won't start
 ```bash
-# SSH into cPanel
-cd ~/fagiassets/assetmanagement
-
-# Activate virtual environment
-source ~/virtualenv/fagiassets/3.11/bin/activate
-
-# Export data from old database (if you still have access)
-python manage.py dumpdata > backup.json
-
-# Update .env with new database credentials
-nano ../.env
-
-# Run migrations on new database
-python manage.py migrate
-
-# Import data
-python manage.py loaddata backup.json
-
-# Create admin user
-python manage.py createsuperuser
+# Check logs in cPanel Python App interface
+# Or check passenger logs:
+tail -f ~/logs/passenger.log
 ```
 
----
-
-## Backup Strategy
-
-With YOUR Supabase:
-
-1. **Automatic backups** (Supabase does daily)
-2. **Manual export:**
+### Database connection fails
 ```bash
-python manage.py dumpdata --indent 2 > backup_$(date +%Y%m%d).json
+# Test connection:
+python manage.py dbshell
+# Should connect to your Supabase database
 ```
 
-3. **Download from Supabase dashboard:**
-   - Settings → Database → Backups
-   - Can restore to any point in time (paid plans)
+### Static files not loading
+```bash
+python manage.py collectstatic --clear --noinput
+```
 
----
+## ✅ Verification Checklist
 
-## Cost Summary
+- [ ] Application accessible at your domain
+- [ ] Can login as superuser
+- [ ] Database queries working
+- [ ] Static files loading
+- [ ] No error in logs
 
-| Service | Cost | What You Get |
-|---------|------|--------------|
-| cPanel | $X/month | Hosting (already paying) |
-| Supabase | **FREE** | 500MB DB, daily backups |
-| **Total** | Same as now | Full control! |
+## 📝 Important Files
 
----
+- `passenger_wsgi.py` - Application entry point (fixed)
+- `.env` - Environment variables (create this)
+- `assetmanagement/assetmanager/settings.py` - Reads from .env
+- `.env.cpanel` - Reference for cPanel configuration
 
-## Benefits of This Setup
+## 🎉 Success!
 
-✅ Use cPanel you're already paying for
-✅ Own your database with full access
-✅ Daily automatic backups
-✅ Can export/import data anytime
-✅ No vendor lock-in
-✅ Better performance (cPanel + Supabase)
-✅ Can migrate to PostgreSQL on cPanel later
-
----
-
-## Next Steps
-
-1. Create your Supabase account
-2. Get new database credentials
-3. Update `.env` and `settings.py`
-4. Push to GitHub
-5. Deploy to cPanel
-6. Migrate data from old database
-
-**Want me to help you with any of these steps?**
+Once deployed, your application will:
+- Run on cPanel hosting
+- Use YOUR Supabase database
+- Have automatic SSL
+- Include automatic backups
+- Be fully under your control
