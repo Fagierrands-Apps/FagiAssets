@@ -1476,6 +1476,18 @@
                             Reports
                         </a>
                     </div>
+                    <div class="nav-item">
+                        <a href="{% url 'crm:admin_leave_list' %}" class="nav-link {% if 'leave' in request.resolver_match.url_name and 'balance' not in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-calendar-alt"></i>
+                            Leave
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="{% url 'crm:admin_leave_balances' %}" class="nav-link {% if 'leave_balances' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-calendar-check"></i>
+                            Leave Balances
+                        </a>
+                    </div>
                 </div>
                 
                 <div class="nav-section">

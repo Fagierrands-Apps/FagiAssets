@@ -1,0 +1,158 @@
+{% extends "crm/base.html" %}
+
+{% block page_title %}Leave Balances{% endblock %}
+{% block page_header %}Leave Balances{% endblock %}
+{% block page_subtitle %}Manage annual and sick leave days for all employees — {{ year }}{% endblock %}
+
+{% block crm_content %}
+<div class="d-flex gap-2 mb-3">
+    <a href="{% url 'crm:admin_leave_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-list me-1"></i>Leave Requests
+    </a>
+</div>
+
+<div class="card" data-aos="fade-up">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee</th>
+                        <th class="text-center">Annual Total</th>
+                        <th class="text-center">Annual Used</th>
+                        <th class="text-center">Annual Remaining</th>
+                        <th class="text-center">Sick Total</th>
+                        <th class="text-center">Sick Used</th>
+                        <th class="text-center">Sick Remaining</th>
+                        <th class="text-center">Edit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in balances %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ b.employee.full_name }}</div>
+                            <small class="text-muted">{{ b.employee.employee_id }}</small>
+                        </td>
+                        <td class="text-center">{{ b.annual_days_total }}</td>
+                        <td class="text-center">{{ b.annual_days_used }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-{% if b.annual_days_remaining <= 3 %}danger{% elif b.annual_days_remaining <= 7 %}warning{% else %}success{% endif %}">
+                                {{ b.annual_days_remaining }}
+                            </span>
+                        </td>
+                        <td class="text-center">{{ b.sick_days_total }}</td>
+                        <td class="text-center">{{ b.sick_days_used }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-{% if b.sick_days_remaining <= 2 %}danger{% else %}info{% endif %}">
+                                {{ b.sick_days_remaining }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-outline-primary btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editModal"
+                                data-emp-id="{{ b.employee.id }}"
+                                data-emp-name="{{ b.employee.full_name }}"
+                                data-annual-total="{{ b.annual_days_total }}"
+                                data-annual-used="{{ b.annual_days_used }}"
+                                data-sick-total="{{ b.sick_days_total }}"
+                                data-sick-used="{{ b.sick_days_used }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">No active employees found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Leave Balance — <span id="modalEmpName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="employee_id" id="modalEmpId">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label">Annual Total Days</label>
+                            <input type="number" class="form-control" name="value" id="fieldValue_annual_days_total" min="0">
+                            <input type="hidden" name="field" id="fieldName">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Annual Days Used</label>
+                            <input type="number" class="form-control" id="display_annual_used" min="0" disabled>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Sick Total Days</label>
+                            <input type="number" class="form-control" id="display_sick_total" min="0" disabled>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Sick Days Used</label>
+                            <input type="number" class="form-control" id="display_sick_used" min="0" disabled>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-3 mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Use the buttons below to update one field at a time. "Used" days are auto-updated when leave is approved, but you can manually adjust here.
+                    </p>
+                </div>
+                <div class="modal-footer flex-wrap gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm" onclick="setField('annual_days_total', 'fieldValue_annual_days_total')">
+                        Save Annual Total
+                    </button>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="setFieldFromDisplay('annual_days_used', 'display_annual_used')">
+                        Save Annual Used
+                    </button>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="setFieldFromDisplay('sick_days_total', 'display_sick_total')">
+                        Save Sick Total
+                    </button>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="setFieldFromDisplay('sick_days_used', 'display_sick_used')">
+                        Save Sick Used
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+const editModal = document.getElementById('editModal');
+editModal.addEventListener('show.bs.modal', e => {
+    const btn = e.relatedTarget;
+    document.getElementById('modalEmpName').textContent = btn.dataset.empName;
+    document.getElementById('modalEmpId').value = btn.dataset.empId;
+    document.getElementById('fieldValue_annual_days_total').value = btn.dataset.annualTotal;
+    document.getElementById('display_annual_used').value = btn.dataset.annualUsed;
+    document.getElementById('display_sick_total').value = btn.dataset.sickTotal;
+    document.getElementById('display_sick_used').value = btn.dataset.sickUsed;
+});
+
+function setField(fieldName, inputId) {
+    document.getElementById('fieldName').value = fieldName;
+    // value input is already the right one
+}
+
+function setFieldFromDisplay(fieldName, displayId) {
+    document.getElementById('fieldName').value = fieldName;
+    // copy display value into the hidden value field
+    const val = document.getElementById(displayId).value;
+    document.getElementById('fieldValue_annual_days_total').value = val;
+}
+</script>
+{% endblock %}

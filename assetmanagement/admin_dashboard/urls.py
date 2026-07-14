@@ -84,7 +84,10 @@ urlpatterns = [
     
     # Reports
     path('reports/', views.admin_reports, name='reports'),
-    
+
+    # Leave Requests shortcut
+    path('leave-requests/', views.admin_leave_redirect, name='leave_requests'),
+
     # AJAX endpoints
     path('ajax/user-search/', views.ajax_user_search, name='ajax_user_search'),
     path('ajax/asset-search/', views.ajax_asset_search, name='ajax_asset_search'),

@@ -1119,3 +1119,62 @@ class HandlerReport(models.Model):
         if self.weekly_target == 0:
             return 0
         return round((self.calls_made / self.weekly_target) * 100, 2)
+
+
+class LeaveRequest(models.Model):
+    LEAVE_TYPE_CHOICES = [
+        ('annual', 'Annual'),
+        ('sick', 'Sick'),
+        ('emergency', 'Emergency'),
+        ('unpaid', 'Unpaid'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='leave_requests')
+    leave_type = models.CharField(max_length=20, choices=LEAVE_TYPE_CHOICES)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    days_requested = models.IntegerField()
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    reviewed_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_leaves')
+    review_notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.employee.full_name} - {self.get_leave_type_display()} ({self.start_date} to {self.end_date})"
+
+    def save(self, *args, **kwargs):
+        if self.start_date and self.end_date:
+            delta = self.end_date - self.start_date
+            self.days_requested = delta.days + 1
+        super().save(*args, **kwargs)
+
+
+class LeaveBalance(models.Model):
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, related_name='leave_balance')
+    annual_days_total = models.IntegerField(default=21)
+    annual_days_used = models.IntegerField(default=0)
+    sick_days_total = models.IntegerField(default=10)
+    sick_days_used = models.IntegerField(default=0)
+    year = models.IntegerField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.employee.full_name} - Leave Balance {self.year}"
+
+    @property
+    def annual_days_remaining(self):
+        return self.annual_days_total - self.annual_days_used
+
+    @property
+    def sick_days_remaining(self):
+        return self.sick_days_total - self.sick_days_used

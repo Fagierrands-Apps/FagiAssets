@@ -2528,3 +2528,9 @@ def admin_reports(request):
     """Wrapper view for CRM admin reports - redirects to CRM reports view"""
     from crm.views import admin_reports as crm_admin_reports
     return crm_admin_reports(request)
+
+
+@login_required
+@user_passes_test(is_admin_user)
+def admin_leave_redirect(request):
+    return redirect('crm:admin_leave_list')

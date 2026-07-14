@@ -101,51 +101,59 @@ WSGI_APPLICATION = 'assetmanager.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Always use Supabase PostgreSQL database
-DATABASES = {
-    # PRIMARY: cPanel PostgreSQL
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'distinc3_crm'),
-        'USER': os.environ.get('DB_USER', 'distinc3_crm2'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'Pa7swrd1990@'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-        'OPTIONS': {
-            'connect_timeout': 30,
-        },
-        'CONN_MAX_AGE': 600,
-    },
-    
-    # BACKUP: Old Supabase (temporary backup until IPv6 fixed)
-    'backup': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.dxesmzogjpxswxhsomgf',
-        'PASSWORD': 'OnFRtf0SmpHwgNaQ',
-        'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
-        'PORT': '6543',
-        'OPTIONS': {
-            'sslmode': 'require',
-            'connect_timeout': 30,
-        },
-        'CONN_MAX_AGE': 600,
-    },
-    
-    # NEW SUPABASE: Will switch to this when IPv6 available
-    'new_supabase': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'U)5z5zB#8DqrREe',
-        'HOST': 'db.kqvalmeduggynzmlddqx.supabase.co',
-        'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'require',
-            'connect_timeout': 30,
-        },
+# Use SQLite locally when LOCAL_SQLITE=1 is set
+if os.environ.get('LOCAL_SQLITE') == '1':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db_local.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        # PRIMARY: cPanel PostgreSQL
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'distinc3_crm'),
+            'USER': os.environ.get('DB_USER', 'distinc3_crm2'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'Pa7swrd1990@'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'OPTIONS': {
+                'connect_timeout': 30,
+            },
+            'CONN_MAX_AGE': 600,
+        },
+
+        # BACKUP: Old Supabase (temporary backup until IPv6 fixed)
+        'backup': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'postgres',
+            'USER': 'postgres.dxesmzogjpxswxhsomgf',
+            'PASSWORD': 'OnFRtf0SmpHwgNaQ',
+            'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
+            'PORT': '6543',
+            'OPTIONS': {
+                'sslmode': 'require',
+                'connect_timeout': 30,
+            },
+            'CONN_MAX_AGE': 600,
+        },
+
+        # NEW SUPABASE: Will switch to this when IPv6 available
+        'new_supabase': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'postgres',
+            'USER': 'postgres',
+            'PASSWORD': 'U)5z5zB#8DqrREe',
+            'HOST': 'db.kqvalmeduggynzmlddqx.supabase.co',
+            'PORT': '5432',
+            'OPTIONS': {
+                'sslmode': 'require',
+                'connect_timeout': 30,
+            },
+        }
+    }
 
 
 

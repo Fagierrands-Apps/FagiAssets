@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import activity_views
+from . import leave_views
 
 app_name = 'crm'
 
@@ -73,4 +74,11 @@ urlpatterns = [
     path('activity/summary/', activity_views.get_activity_summary, name='get_activity_summary'),
     path('activity/idle-periods/', activity_views.get_idle_periods, name='get_idle_periods'),
     path('activity/idle-reason/', activity_views.report_idle_reason, name='report_idle_reason'),
+
+    # Leave Management
+    path('employee/leave/apply/', leave_views.apply_leave, name='apply_leave'),
+    path('employee/leave/my-requests/', leave_views.my_leave_requests, name='my_leave_requests'),
+    path('employee/leave/<int:request_id>/decision/', leave_views.leave_decision, name='leave_decision'),
+    path('admin/leave/', leave_views.admin_leave_list, name='admin_leave_list'),
+    path('admin/leave/balances/', leave_views.admin_leave_balances, name='admin_leave_balances'),
 ]

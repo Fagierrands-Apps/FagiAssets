@@ -1,0 +1,74 @@
+{% extends "crm/employee_base.html" %}
+
+{% block page_title %}Apply for Leave{% endblock %}
+{% block page_header %}Apply for Leave{% endblock %}
+{% block page_subtitle %}Submit a leave application{% endblock %}
+
+{% block employee_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+
+        <!-- Balance Summary -->
+        <div class="card mb-4" data-aos="fade-up">
+            <div class="card-body">
+                <h6 class="card-title mb-3"><i class="fas fa-calendar-check me-2 text-primary"></i>Your Leave Balance ({{ balance.year }})</h6>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="fw-bold fs-4 text-success">{{ balance.annual_days_remaining }}</div>
+                        <small class="text-muted">Annual Days Remaining</small>
+                        <div class="text-muted" style="font-size:0.75rem;">{{ balance.annual_days_used }} / {{ balance.annual_days_total }} used</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="fw-bold fs-4 text-info">{{ balance.sick_days_remaining }}</div>
+                        <small class="text-muted">Sick Days Remaining</small>
+                        <div class="text-muted" style="font-size:0.75rem;">{{ balance.sick_days_used }} / {{ balance.sick_days_total }} used</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Form -->
+        <div class="card" data-aos="fade-up">
+            <div class="card-body p-4">
+                <h5 class="mb-4"><i class="fas fa-file-alt me-2 text-primary"></i>Leave Application</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Leave Type</label>
+                        <select class="form-select" name="leave_type" required>
+                            <option value="">-- Select --</option>
+                            <option value="annual">Annual</option>
+                            <option value="sick">Sick</option>
+                            <option value="emergency">Emergency</option>
+                            <option value="unpaid">Unpaid</option>
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" name="start_date" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" name="end_date" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Reason</label>
+                        <textarea class="form-control" name="reason" rows="3" required placeholder="Briefly describe the reason for your leave..."></textarea>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'crm:my_leave_requests' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>My Requests
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Application
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
