@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: fagiassets
+    runtime: python
+    rootDir: assetmanagement
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
+    startCommand: gunicorn assetmanager.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: assetmanager.settings
+      - key: DEBUG
+        value: "False"
+      - key: DB_HOST
+        value: aws-0-ap-southeast-1.pooler.supabase.com
+      - key: DB_NAME
+        value: postgres
+      - key: DB_USER
+        value: postgres.dxesmzogjpxswxhsomgf
+      - key: DB_PASSWORD
+        value: OnFRtf0SmpHwgNaQ
+      - key: DB_PORT
+        value: "6543"
+      - key: ALLOWED_HOSTS
+        value: "*"
