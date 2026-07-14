@@ -2,9 +2,8 @@ services:
   - type: web
     name: fagiassets
     runtime: python
-    rootDir: assetmanagement
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
-    startCommand: gunicorn assetmanager.wsgi:application --bind 0.0.0.0:$PORT
+    buildCommand: pip install -r assetmanagement/requirements.txt && cd assetmanagement && python manage.py collectstatic --noinput && python manage.py migrate --noinput
+    startCommand: cd assetmanagement && gunicorn assetmanager.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: assetmanager.settings
