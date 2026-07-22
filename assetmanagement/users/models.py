@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
+from django.utils import timezone
 
 
 
@@ -166,6 +167,7 @@ def manage_employee_profile(sender, instance, created, **kwargs):
                             'employment_status': 'active',
                             'employment_type': 'full_time',
                             'role': 'user',
+                            'hire_date': timezone.now().date(),
                         }
                     )
                     # If employee profile was created, try to populate from existing UserProfile
@@ -204,6 +206,7 @@ def manage_employee_profile(sender, instance, created, **kwargs):
                                 'employment_status': 'active',
                                 'employment_type': 'full_time',
                                 'role': 'user',
+                                'hire_date': timezone.now().date(),
                             }
                         )
                         if employee_created:
@@ -234,6 +237,7 @@ def manage_employee_profile(sender, instance, created, **kwargs):
                                 'employment_status': 'active',
                                 'employment_type': 'full_time',
                                 'role': 'user',
+                                'hire_date': timezone.now().date(),
                             }
                         )
                         if employee_created:

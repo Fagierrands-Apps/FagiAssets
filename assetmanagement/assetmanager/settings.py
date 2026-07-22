@@ -125,34 +125,6 @@ else:
             'CONN_MAX_AGE': 600,
         },
 
-        # BACKUP: Old Supabase (temporary backup until IPv6 fixed)
-        'backup': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'postgres',
-            'USER': 'postgres.dxesmzogjpxswxhsomgf',
-            'PASSWORD': 'OnFRtf0SmpHwgNaQ',
-            'HOST': 'aws-0-ap-southeast-1.pooler.supabase.com',
-            'PORT': '6543',
-            'OPTIONS': {
-                'sslmode': 'require',
-                'connect_timeout': 30,
-            },
-            'CONN_MAX_AGE': 600,
-        },
-
-        # NEW SUPABASE: Will switch to this when IPv6 available
-        'new_supabase': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'postgres',
-            'USER': 'postgres',
-            'PASSWORD': 'U)5z5zB#8DqrREe',
-            'HOST': 'db.kqvalmeduggynzmlddqx.supabase.co',
-            'PORT': '5432',
-            'OPTIONS': {
-                'sslmode': 'require',
-                'connect_timeout': 30,
-            },
-        }
     }
 
 
