@@ -123,6 +123,7 @@ else:
                 'connect_timeout': 30,
             },
             'CONN_MAX_AGE': 600,
+            'DISABLE_SERVER_SIDE_CURSORS': True,
         },
 
     }
@@ -308,3 +309,10 @@ LOGGING = {
         },
     },
 }
+
+# Company Branding
+COMPANY_NAME = "Fagi Errands Services Limited"
+COMPANY_WEBSITE = "www.fagierrands.com"
+COMPANY_LOGO_PATH = BASE_DIR / "static/images/company_logo.png"
+BRAND_BLUE = "#1A1AFF"
+BRAND_ORANGE = "#E83A00"

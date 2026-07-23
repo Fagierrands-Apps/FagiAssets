@@ -76,3 +76,32 @@ def user_public_data_json(request, user_id):
         })
     
     return JsonResponse(user_data, json_dumps_params={'indent': 2})
+
+
+def user_public_profile(request, qr_token):
+    """Public profile via QR token — no login required."""
+    from users.models import UserProfile
+    from django.conf import settings
+    from types import SimpleNamespace
+
+    up   = get_object_or_404(UserProfile, qr_token=qr_token)
+    user = up.user
+    emp  = getattr(user, 'employee_profile', None)
+
+    # Merge: prefer employee_profile data, fall back to UserProfile
+    profile = SimpleNamespace(
+        employee_id = (emp.employee_id if emp else None) or up.employee_id or "N/A",
+        job_title   = (emp.position    if emp else None) or up.job_title   or "N/A",
+        department  = SimpleNamespace(name=str(emp.department)) if emp and emp.department else (
+                      up.department if up.department else None),
+        phone       = (emp.phone       if emp else None) or up.phone or up.mobile or "N/A",
+        avatar      = up.avatar if up.avatar else None,
+    )
+
+    context = {
+        'profile_user': user,
+        'profile': profile,
+        'company_name': getattr(settings, 'COMPANY_NAME', 'Fagi Errands Services Limited'),
+        'company_website': getattr(settings, 'COMPANY_WEBSITE', 'fagierrands.com'),
+    }
+    return render(request, 'users/user_public_profile.html', context)

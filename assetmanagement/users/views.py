@@ -266,3 +266,34 @@ def session_status(request):
         session_data['session_in_db'] = False
     
     return JsonResponse(session_data, json_dumps_params={'indent': 2})
+
+
+@login_required
+def download_nametag_pdf(request, user_id):
+    """Download name tag PDF for a user."""
+    user = get_object_or_404(User, id=user_id)
+    from users.nametag import generate_nametag_pdf
+    pdf_bytes = generate_nametag_pdf(user, request)
+    name = user.get_full_name() or user.username
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{name}_nametag.pdf"'
+    return response
+
+
+@login_required
+def bulk_nametag_pdf(request):
+    """Bulk download name tags for selected users (POST with user_ids)."""
+    if request.method != 'POST':
+        return HttpResponse('Method not allowed', status=405)
+
+    user_ids = request.POST.getlist('user_ids')
+    if not user_ids:
+        return HttpResponse('No users selected', status=400)
+
+    users = User.objects.filter(id__in=user_ids)
+    from users.nametag import generate_bulk_nametag_pdf
+    pdf_bytes = generate_bulk_nametag_pdf(users, request)
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="bulk_nametags.pdf"'
+    return response

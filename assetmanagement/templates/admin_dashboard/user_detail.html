@@ -265,6 +265,9 @@
                     <a href="{% url 'admin_dashboard:user_edit' user_obj.id %}" class="btn btn-primary">
                         <i class="fas fa-edit me-2"></i>Edit User
                     </a>
+                    <a href="{% url 'users:download_nametag' user_obj.id %}" class="btn btn-success">
+                        <i class="fas fa-id-card me-2"></i>Download Name Tag
+                    </a>
                     <a href="{% url 'admin_dashboard:user_toggle_active' user_obj.id %}" 
                        class="btn btn-{% if user_obj.is_active %}warning{% else %}success{% endif %}">
                         <i class="fas fa-{% if user_obj.is_active %}pause{% else %}play{% endif %} me-2"></i>
@@ -281,7 +284,30 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- Name Tag Card -->
+        {% if user_obj.profile.qr_token %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-id-card me-2"></i>Name Tag / QR Code
+            </div>
+            <div class="card-body text-center">
+                <img src="{% url 'users:qr_code_image' user_obj.id %}?size=150"
+                     alt="QR Code" class="mb-3 border rounded p-1" style="width:150px;height:150px;">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" id="public-link"
+                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'users:user_public_profile' user_obj.profile.qr_token %}"
+                           readonly>
+                    <button class="btn btn-outline-secondary" type="button"
+                            onclick="navigator.clipboard.writeText(document.getElementById('public-link').value);this.innerHTML='<i class=\'fas fa-check\'></i>'">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <small class="text-muted d-block mt-1">Public profile link (permanent)</small>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- User Statistics -->
         <div class="card mb-4">
             <div class="card-header">

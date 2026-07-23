@@ -1,2 +1,6 @@
 
 assetmanagement/admin_dashboard/__pycache__/__init__.cpython-314.pyc
+__pycache__/
+*.pyc
+*.ppm
+id_template_front_cached.png

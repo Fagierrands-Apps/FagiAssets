@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
+import uuid
 from django.utils import timezone
 
 
@@ -30,6 +31,9 @@ class UserProfile(models.Model):
     
     # Avatar
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+
+    # Permanent QR token — never changes, used for name tag QR codes
+    qr_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)

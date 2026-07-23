@@ -22,6 +22,9 @@
         <a href="{% url 'admin_dashboard:bulk_user_qr_codes' %}" class="btn btn-outline-info">
             <i class="fas fa-qrcode me-2"></i>Generate QR Codes
         </a>
+        <button class="btn btn-outline-success" onclick="bulkDownloadNametags()">
+            <i class="fas fa-id-card me-2"></i>Download Name Tags
+        </button>
         <a href="{% url 'admin_dashboard:user_create' %}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>Add New User
         </a>
@@ -105,6 +108,11 @@
                 <div class="col-xl-3 col-lg-4 col-md-6">
                     <div class="card h-100 user-card">
                         <div class="card-body text-center">
+                            <!-- Select checkbox -->
+                            <div class="form-check position-absolute top-0 start-0 m-2">
+                                <input class="form-check-input user-checkbox" type="checkbox"
+                                       value="{{ user.id }}" id="check-{{ user.id }}">
+                            </div>
                             <!-- User Avatar -->
                             <div class="mb-3">
                                 {% if user.profile.avatar %}
@@ -201,6 +209,7 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th><input type="checkbox" id="select-all" title="Select all"></th>
                                 <th>User</th>
                                 <th>Contact</th>
                                 <th>Department</th>
@@ -213,6 +222,7 @@
                         <tbody>
                             {% for user in page_obj %}
                             <tr>
+                                <td><input class="user-checkbox" type="checkbox" value="{{ user.id }}"></td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         {% if user.profile.avatar %}
@@ -394,6 +404,36 @@
 
 {% block extra_js %}
 <script>
+// Bulk nametag download
+function bulkDownloadNametags() {
+    const checked = Array.from(document.querySelectorAll('.user-checkbox:checked'));
+    if (checked.length === 0) {
+        alert('Please select at least one user.');
+        return;
+    }
+    const form = document.getElementById('bulk-nametag-form');
+    // Clear previous inputs
+    form.querySelectorAll('input[name="user_ids"]').forEach(el => el.remove());
+    checked.forEach(cb => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'user_ids';
+        input.value = cb.value;
+        form.appendChild(input);
+    });
+    form.submit();
+}
+
+// Select all checkbox (table view)
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = this.checked);
+        });
+    }
+});
+
 // View mode toggle
 document.getElementById('grid-view').addEventListener('change', function() {
     if (this.checked) {
@@ -443,3 +483,8 @@ function exportUsers() {
 }
 </script>
 {% endblock %}
+
+<!-- Hidden form for bulk nametag download -->
+<form id="bulk-nametag-form" method="post" action="{% url 'users:bulk_nametag' %}" style="display:none;">
+    {% csrf_token %}
+</form>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile_user.get_full_name|default:profile_user.username }} — Fagi Errands</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f0f2f8; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; gap: 16px; }
+
+        /* ── Employee card ── */
+        .card { background: white; border-radius: 16px; overflow: hidden; width: 100%; max-width: 380px; box-shadow: 0 8px 32px rgba(10,21,96,0.15); }
+        .card-header { background: #0D1B6E; padding: 24px 20px 40px; text-align: center; }
+        .card-header h2 { color: white; font-size: 17px; font-weight: 700; }
+        .card-header p  { color: #AABBFF; font-size: 12px; margin-top: 2px; }
+        .photo-wrap { display: flex; justify-content: center; margin-top: -36px; }
+        .photo-wrap img, .initials {
+            width: 72px; height: 72px; border-radius: 50%;
+            border: 4px solid white; object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .initials { background: #0D1B6E; display: flex; align-items: center; justify-content: center; color: white; font-size: 26px; font-weight: bold; }
+        .card-body { padding: 12px 24px 24px; text-align: center; }
+        .emp-name { font-size: 20px; font-weight: bold; color: #111; margin-top: 8px; }
+        .emp-role { font-size: 13px; color: #E83A00; font-weight: 600; margin-top: 3px; }
+        .emp-dept { font-size: 12px; color: #666; margin-top: 2px; }
+        hr { border: none; border-top: 1px solid #eee; margin: 14px 0; }
+        .info-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+        .info-row span:first-child { color: #999; }
+        .info-row span:last-child  { color: #222; font-weight: 600; }
+
+        /* ── Marketing card ── */
+        .mkt { background: white; border-radius: 16px; overflow: hidden; width: 100%; max-width: 380px; box-shadow: 0 8px 32px rgba(10,21,96,0.12); }
+        .mkt-header { background: #0D1B6E; padding: 18px 20px; text-align: center; }
+        .mkt-header .tagline { color: white; font-size: 18px; font-weight: 800; }
+        .mkt-header .tagline span { color: #FF6B00; }
+        .mkt-header p { color: #AABBFF; font-size: 12px; margin-top: 4px; }
+        .mkt-body { padding: 20px 24px; }
+
+        .section-title { font-size: 11px; font-weight: 700; color: #0D1B6E; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
+
+        .services { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .service-tag { background: #EEF0FF; color: #0D1B6E; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 20px; }
+
+        .locations { margin-bottom: 20px; }
+        .loc-item { font-size: 12px; color: #333; margin-bottom: 6px; display: flex; gap: 8px; }
+        .loc-item .icon { font-size: 14px; flex-shrink: 0; }
+
+        .contacts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .contact-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #222; font-size: 13px; font-weight: 600; }
+        .contact-link .icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+        .c-phone   { background: #E8F5E9; }
+        .c-wa      { background: #E8F5E9; }
+        .c-email   { background: #E3F2FD; }
+        .c-web     { background: #EEF0FF; }
+
+        .socials { display: flex; gap: 12px; }
+        .social-link { display: flex; align-items: center; gap: 6px; text-decoration: none; color: #0D1B6E; font-size: 12px; font-weight: 600; background: #EEF0FF; padding: 6px 12px; border-radius: 20px; }
+
+        .mkt-footer { background: #0D1B6E; padding: 12px; text-align: center; color: #AABBFF; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<!-- Employee Card -->
+<div class="card">
+    <div class="card-header">
+        <h2>Fagi Errands Services Limited</h2>
+        <p>Employee Profile</p>
+    </div>
+    <div class="photo-wrap">
+        {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" alt="Photo">
+        {% else %}
+            <div class="initials">{{ profile_user.first_name|first|default:profile_user.username|first|upper }}</div>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <div class="emp-name">{{ profile_user.get_full_name|default:profile_user.username }}</div>
+        <div class="emp-role">{{ profile.job_title|default:"" }}</div>
+        <div class="emp-dept">{{ profile.department.name|default:"" }}</div>
+        <hr>
+        <div class="info-row"><span>Employee ID</span><span>{{ profile.employee_id|default:"N/A" }}</span></div>
+        <div class="info-row"><span>Department</span><span>{{ profile.department.name|default:"N/A" }}</span></div>
+        <div class="info-row"><span>Phone</span><span>{{ profile.phone|default:"N/A" }}</span></div>
+    </div>
+</div>
+
+<!-- Marketing Card -->
+<div class="mkt">
+    <div class="mkt-header">
+        <div class="tagline">Got errands? <span>Get Fagi</span></div>
+        <p>Your trusted errands partner in Nairobi</p>
+    </div>
+    <div class="mkt-body">
+
+        <div class="section-title">Our Services</div>
+        <div class="services">
+            <span class="service-tag">📦 Parcel Delivery</span>
+            <span class="service-tag">🚛 Cargo Delivery</span>
+            <span class="service-tag">🚪 Door to Door</span>
+            <span class="service-tag">🛒 Shopping</span>
+            <span class="service-tag">🏦 Cheque Banking</span>
+            <span class="service-tag">🏪 Shelf Renting</span>
+        </div>
+
+        <div class="section-title">Our Locations</div>
+        <div class="locations">
+            <div class="loc-item"><span class="icon">📍</span><span><strong>Cianda Mall</strong> — Shop 706 &nbsp;|&nbsp; Open 7am – 7pm</span></div>
+            <div class="loc-item"><span class="icon">🏢</span><span><strong>Next Gen Mall</strong> (Main Office) &nbsp;|&nbsp; Open 8am – 6pm</span></div>
+        </div>
+
+        <div class="section-title">Contact Us</div>
+        <div class="contacts">
+            <a class="contact-link" href="tel:0725115550"><span class="icon c-phone">📞</span>0725 115 550</a>
+            <a class="contact-link" href="https://wa.me/254725115550" target="_blank"><span class="icon c-wa">💬</span>WhatsApp: 0725 115 550</a>
+            <a class="contact-link" href="mailto:info@fagierrands.com"><span class="icon c-email">✉️</span>info@fagierrands.com</a>
+            <a class="contact-link" href="https://fagierrands.com" target="_blank"><span class="icon c-web">🌐</span>fagierrands.com</a>
+        </div>
+
+        <div class="section-title">Follow Us</div>
+        <div class="socials">
+            <a class="social-link" href="https://tiktok.com/@fagi_errands" target="_blank">🎵 @fagi_errands</a>
+            <a class="social-link" href="https://instagram.com/fagiErrands" target="_blank">📸 @fagiErrands</a>
+            <a class="social-link" href="https://facebook.com/fagiErrands" target="_blank">👍 fagiErrands</a>
+        </div>
+    </div>
+    <div class="mkt-footer">© Fagi Errands Services Limited &nbsp;|&nbsp; fagierrands.com</div>
+</div>
+
+</body>
+</html>
