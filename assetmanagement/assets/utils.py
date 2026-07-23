@@ -25,8 +25,8 @@ def generate_qr_code_image(data, size=(200, 200), logo_path=None):
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
-        box_size=8,
-        border=2,
+        box_size=12,  # larger box = sharper at any display size
+        border=3,
     )
     qr.add_data(data)
     qr.make(fit=True)

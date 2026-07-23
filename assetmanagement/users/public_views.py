@@ -3,7 +3,7 @@ Public views for users (accessible without login via QR codes)
 """
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import User
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 
 
@@ -79,7 +79,6 @@ def user_public_data_json(request, user_id):
 
 
 def user_public_profile(request, qr_token):
-    """Public profile via QR token — no login required."""
     from users.models import UserProfile
     from django.conf import settings
     from types import SimpleNamespace
@@ -101,7 +100,76 @@ def user_public_profile(request, qr_token):
     context = {
         'profile_user': user,
         'profile': profile,
+        'qr_token': str(up.qr_token),
         'company_name': getattr(settings, 'COMPANY_NAME', 'Fagi Errands Services Limited'),
         'company_website': getattr(settings, 'COMPANY_WEBSITE', 'fagierrands.com'),
     }
     return render(request, 'users/user_public_profile.html', context)
+
+
+def user_qr_pdf(request, qr_token):
+    """Download employee QR code as a high-quality PDF — no login required."""
+    import io
+    from users.models import UserProfile
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.units import mm
+    from reportlab.lib.utils import ImageReader
+    from PIL import Image as PILImage
+    import qrcode, base64
+
+    up   = get_object_or_404(UserProfile, qr_token=qr_token)
+    user = up.user
+    emp  = getattr(user, 'employee_profile', None)
+    name = user.get_full_name() or user.username
+    role = (emp.position if emp else None) or "Employee"
+
+    public_url = request.build_absolute_uri(f'/users/public/{qr_token}/')
+
+    # Generate high-res QR (box_size=20 → very sharp)
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M,
+                       box_size=20, border=3)
+    qr.add_data(public_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="#0D1B6E", back_color="white").convert("RGB")
+
+    qr_buf = io.BytesIO()
+    qr_img.save(qr_buf, format='PNG', dpi=(300, 300))
+    qr_buf.seek(0)
+
+    # PDF page: 80x100mm
+    pw, ph = 80*mm, 100*mm
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=(pw, ph))
+
+    # White background
+    c.setFillColorRGB(1, 1, 1)
+    c.rect(0, 0, pw, ph, fill=1, stroke=0)
+
+    # QR code centred
+    qr_size = 60*mm
+    qr_x = (pw - qr_size) / 2
+    qr_y = ph - 10*mm - qr_size
+    c.drawImage(ImageReader(qr_buf), qr_x, qr_y, width=qr_size, height=qr_size)
+
+    # Name
+    c.setFillColorRGB(0.05, 0.11, 0.43)  # navy
+    c.setFont("Helvetica-Bold", 11)
+    c.drawCentredString(pw/2, qr_y - 8*mm, name.upper())
+
+    # Role
+    c.setFillColorRGB(0.91, 0.23, 0)  # orange
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(pw/2, qr_y - 13*mm, role)
+
+    # Tagline
+    c.setFillColorRGB(0.4, 0.4, 0.4)
+    c.setFont("Helvetica", 7)
+    c.drawCentredString(pw/2, 6*mm, "Scan to view profile • fagierrands.com")
+
+    c.save()
+    buf.seek(0)
+
+    filename = f"{user.username}_qr.pdf"
+    response = HttpResponse(buf.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

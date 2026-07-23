@@ -13,6 +13,7 @@ urlpatterns = [
     path('<int:user_id>/public/', public_views.user_public_view, name='user_public_view'),
     path('<int:user_id>/public/data.json', public_views.user_public_data_json, name='user_public_data_json'),
     path('public/<uuid:qr_token>/', public_views.user_public_profile, name='user_public_profile'),
+    path('public/<uuid:qr_token>/qr.pdf', public_views.user_qr_pdf, name='user_qr_pdf'),
 
     # User profile (login required)
     path('<int:user_id>/', views.user_profile, name='profile'),

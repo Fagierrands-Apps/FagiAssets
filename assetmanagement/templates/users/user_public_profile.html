@@ -58,6 +58,7 @@
         .social-link { display: flex; align-items: center; gap: 6px; text-decoration: none; color: #0D1B6E; font-size: 12px; font-weight: 600; background: #EEF0FF; padding: 6px 12px; border-radius: 20px; }
 
         .mkt-footer { background: #0D1B6E; padding: 12px; text-align: center; color: #AABBFF; font-size: 11px; }
+        .dl-btn { display: block; width: 100%; max-width: 380px; margin: 0 auto; padding: 14px; background: #0D1B6E; color: white; text-align: center; text-decoration: none; border-radius: 12px; font-size: 14px; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -127,6 +128,8 @@
     </div>
     <div class="mkt-footer">© Fagi Errands Services Limited &nbsp;|&nbsp; fagierrands.com</div>
 </div>
+
+<a class="dl-btn" href="{% url 'user_qr_pdf' qr_token %}">⬇ Download QR Code (PDF)</a>
 
 </body>
 </html>
