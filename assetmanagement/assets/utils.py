@@ -11,36 +11,55 @@ except ImportError:
     HAS_QRCODE = False
 
 
-def generate_qr_code_image(data, size=(200, 200)):
-    """
-    Generate QR code image as base64 string
-    """
+def generate_qr_code_image(data, size=(200, 200), logo_path=None):
+    """Generate QR code image as base64 string, with optional centre logo."""
     if not HAS_QRCODE:
         return None
-    
-    # Create QR code
+
+    from django.core.cache import cache
+    cache_key = f"qr_{hash(data)}_{size[0]}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
         box_size=10,
-        border=4,
+        border=2,
     )
     qr.add_data(data)
     qr.make(fit=True)
-    
-    # Create image
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Resize if needed
-    if img.size != size:
-        img = img.resize(size, Image.Resampling.LANCZOS)
-    
-    # Convert to base64
+
+    img = qr.make_image(fill_color="#0D1B6E", back_color="white").convert("RGBA")
+
+    if not logo_path:
+        import os
+        from django.conf import settings as _s
+        logo_path = str(getattr(_s, 'COMPANY_LOGO_PATH',
+                                os.path.join(_s.BASE_DIR, 'static', 'images', 'company_logo.png')))
+    try:
+        logo = Image.open(logo_path).convert("RGBA")
+        qr_w, qr_h = img.size
+        logo_size = int(qr_w * 0.22)
+        logo = logo.resize((logo_size, logo_size), Image.Resampling.LANCZOS)
+        pad = int(logo_size * 0.2)
+        circle_d = logo_size + pad * 2
+        circle = Image.new("RGBA", (circle_d, circle_d), (0, 0, 0, 0))
+        ImageDraw.Draw(circle).ellipse([0, 0, circle_d - 1, circle_d - 1], fill=(255, 255, 255, 255))
+        circle.paste(logo, (pad, pad), logo)
+        pos = ((qr_w - circle_d) // 2, (qr_h - circle_d) // 2)
+        img.paste(circle, pos, circle)
+    except Exception:
+        pass
+
+    img = img.resize(size, Image.Resampling.BILINEAR)
     buffer = io.BytesIO()
     img.save(buffer, format='PNG')
-    img_str = base64.b64encode(buffer.getvalue()).decode()
-    
-    return f"data:image/png;base64,{img_str}"
+    result = f"data:image/png;base64,{base64.b64encode(buffer.getvalue()).decode()}"
+
+    cache.set(cache_key, result, timeout=86400)  # cache for 24h
+    return result
 
 
 def generate_asset_label_data(asset, request):
