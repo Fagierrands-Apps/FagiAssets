@@ -23,9 +23,9 @@ def generate_qr_code_image(data, size=(200, 200), logo_path=None):
         return cached
 
     qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=10,
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=8,
         border=2,
     )
     qr.add_data(data)
@@ -41,9 +41,9 @@ def generate_qr_code_image(data, size=(200, 200), logo_path=None):
     try:
         logo = Image.open(logo_path).convert("RGBA")
         qr_w, qr_h = img.size
-        logo_size = int(qr_w * 0.22)
+        logo_size = int(qr_w * 0.18)  # smaller — 18% so it doesn't block modules
         logo = logo.resize((logo_size, logo_size), Image.Resampling.LANCZOS)
-        pad = int(logo_size * 0.2)
+        pad = int(logo_size * 0.15)
         circle_d = logo_size + pad * 2
         circle = Image.new("RGBA", (circle_d, circle_d), (0, 0, 0, 0))
         ImageDraw.Draw(circle).ellipse([0, 0, circle_d - 1, circle_d - 1], fill=(255, 255, 255, 255))
