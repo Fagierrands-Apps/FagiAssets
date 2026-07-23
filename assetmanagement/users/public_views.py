@@ -125,15 +125,36 @@ def user_qr_pdf(request, qr_token):
 
     public_url = request.build_absolute_uri(f'/users/public/{qr_token}/')
 
-    # Generate high-res QR (box_size=20 → very sharp)
-    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M,
+    # Generate high-res QR with logo in centre
+    import os
+    from PIL import ImageDraw
+    from django.conf import settings as _s
+
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H,
                        box_size=20, border=3)
     qr.add_data(public_url)
     qr.make(fit=True)
-    qr_img = qr.make_image(fill_color="#0D1B6E", back_color="white").convert("RGB")
+    qr_img = qr.make_image(fill_color="#0D1B6E", back_color="white").convert("RGBA")
+
+    # Embed logo
+    logo_path = str(getattr(_s, 'COMPANY_LOGO_PATH',
+                            os.path.join(_s.BASE_DIR, 'static', 'images', 'company_logo.png')))
+    try:
+        logo = PILImage.open(logo_path).convert("RGBA")
+        qr_w = qr_img.size[0]
+        ls = int(qr_w * 0.18)
+        logo = logo.resize((ls, ls), PILImage.Resampling.LANCZOS)
+        pad = int(ls * 0.2)
+        cd = ls + pad * 2
+        circle = PILImage.new("RGBA", (cd, cd), (0, 0, 0, 0))
+        ImageDraw.Draw(circle).ellipse([0, 0, cd-1, cd-1], fill=(255, 255, 255, 255))
+        circle.paste(logo, (pad, pad), logo)
+        qr_img.paste(circle, ((qr_w - cd)//2, (qr_w - cd)//2), circle)
+    except Exception:
+        pass
 
     qr_buf = io.BytesIO()
-    qr_img.save(qr_buf, format='PNG', dpi=(300, 300))
+    qr_img.convert("RGB").save(qr_buf, format='PNG', dpi=(300, 300))
     qr_buf.seek(0)
 
     # PDF page: 80x100mm
