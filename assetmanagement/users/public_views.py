@@ -108,35 +108,29 @@ def user_public_profile(request, qr_token):
 
 
 def user_qr_pdf(request, qr_token):
-    """Download employee QR code as a high-quality PDF — no login required."""
-    import io
+    """Download employee QR code as a high-quality JPEG."""
+    import io, os
     from users.models import UserProfile
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.units import mm
-    from reportlab.lib.utils import ImageReader
-    from PIL import Image as PILImage
-    import qrcode, base64
+    from PIL import Image as PILImage, ImageDraw, ImageFont
+    from django.conf import settings as _s
+    import qrcode
 
     up   = get_object_or_404(UserProfile, qr_token=qr_token)
     user = up.user
     emp  = getattr(user, 'employee_profile', None)
-    name = user.get_full_name() or user.username
+    name = (user.get_full_name() or user.username).upper()
     role = (emp.position if emp else None) or "Employee"
 
     public_url = request.build_absolute_uri(f'/users/public/{qr_token}/')
 
-    # Generate high-res QR with logo in centre
-    import os
-    from PIL import ImageDraw
-    from django.conf import settings as _s
-
+    # High-res QR
     qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H,
                        box_size=20, border=3)
     qr.add_data(public_url)
     qr.make(fit=True)
     qr_img = qr.make_image(fill_color="#0D1B6E", back_color="white").convert("RGBA")
 
-    # Embed logo
+    # Logo in centre
     logo_path = str(getattr(_s, 'COMPANY_LOGO_PATH',
                             os.path.join(_s.BASE_DIR, 'static', 'images', 'company_logo.png')))
     try:
@@ -153,44 +147,42 @@ def user_qr_pdf(request, qr_token):
     except Exception:
         pass
 
-    qr_buf = io.BytesIO()
-    qr_img.convert("RGB").save(qr_buf, format='PNG', dpi=(300, 300))
-    qr_buf.seek(0)
+    # Compose final image: white canvas, QR + name + role
+    qr_rgb = qr_img.convert("RGB")
+    qr_w, qr_h = qr_rgb.size
+    padding = 60
+    text_area = 120
+    canvas_w = qr_w + padding * 2
+    canvas_h = qr_h + padding * 2 + text_area
 
-    # PDF page: 80x100mm
-    pw, ph = 80*mm, 100*mm
+    out = PILImage.new("RGB", (canvas_w, canvas_h), (255, 255, 255))
+    out.paste(qr_rgb, (padding, padding))
+
+    draw = ImageDraw.Draw(out)
+    # Name text
+    try:
+        font_bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 48)
+        font_reg  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
+    except Exception:
+        font_bold = ImageFont.load_default()
+        font_reg  = font_bold
+
+    # Name centred
+    bbox = draw.textbbox((0, 0), name, font=font_bold)
+    tw = bbox[2] - bbox[0]
+    draw.text(((canvas_w - tw) // 2, qr_h + padding + 20), name,
+              fill=(13, 27, 110), font=font_bold)
+
+    # Role centred
+    bbox2 = draw.textbbox((0, 0), role, font=font_reg)
+    tw2 = bbox2[2] - bbox2[0]
+    draw.text(((canvas_w - tw2) // 2, qr_h + padding + 78), role,
+              fill=(255, 107, 0), font=font_reg)
+
     buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=(pw, ph))
-
-    # White background
-    c.setFillColorRGB(1, 1, 1)
-    c.rect(0, 0, pw, ph, fill=1, stroke=0)
-
-    # QR code centred
-    qr_size = 60*mm
-    qr_x = (pw - qr_size) / 2
-    qr_y = ph - 10*mm - qr_size
-    c.drawImage(ImageReader(qr_buf), qr_x, qr_y, width=qr_size, height=qr_size)
-
-    # Name
-    c.setFillColorRGB(0.05, 0.11, 0.43)  # navy
-    c.setFont("Helvetica-Bold", 11)
-    c.drawCentredString(pw/2, qr_y - 8*mm, name.upper())
-
-    # Role
-    c.setFillColorRGB(0.91, 0.23, 0)  # orange
-    c.setFont("Helvetica", 8)
-    c.drawCentredString(pw/2, qr_y - 13*mm, role)
-
-    # Tagline
-    c.setFillColorRGB(0.4, 0.4, 0.4)
-    c.setFont("Helvetica", 7)
-    c.drawCentredString(pw/2, 6*mm, "Scan to view profile • fagierrands.com")
-
-    c.save()
+    out.save(buf, format='JPEG', quality=95, dpi=(300, 300))
     buf.seek(0)
 
-    filename = f"{user.username}_qr.pdf"
-    response = HttpResponse(buf.read(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response = HttpResponse(buf.read(), content_type='image/jpeg')
+    response['Content-Disposition'] = f'attachment; filename="{user.username}_qr.jpg"'
     return response
