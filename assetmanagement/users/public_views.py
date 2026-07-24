@@ -186,3 +186,83 @@ def user_qr_pdf(request, qr_token):
     response = HttpResponse(buf.read(), content_type='image/jpeg')
     response['Content-Disposition'] = f'attachment; filename="{user.username}_qr.jpg"'
     return response
+
+
+def rider_public_profile(request, qr_token):
+    """Public profile page for a rider — accessible via QR scan, no login needed."""
+    from users.models import Rider
+    from django.conf import settings
+    rider = get_object_or_404(Rider, qr_token=qr_token)
+    context = {
+        'rider': rider,
+        'company_name': getattr(settings, 'COMPANY_NAME', 'Fagi Errands Services Limited'),
+        'company_website': getattr(settings, 'COMPANY_WEBSITE', 'fagierrands.com'),
+    }
+    return render(request, 'users/rider_public_profile.html', context)
+
+
+def rider_qr_download(request, qr_token):
+    """Download rider QR code as a high-quality JPEG."""
+    import io, os
+    from users.models import Rider
+    from PIL import Image as PILImage, ImageDraw, ImageFont
+    from django.conf import settings as _s
+    import qrcode
+
+    rider = get_object_or_404(Rider, qr_token=qr_token)
+    public_url = request.build_absolute_uri(f'/users/rider/{qr_token}/')
+
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=20, border=3)
+    qr.add_data(public_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="#0D1B6E", back_color="white").convert("RGBA")
+
+    # Logo in centre
+    logo_path = str(getattr(_s, 'COMPANY_LOGO_PATH',
+                            os.path.join(_s.BASE_DIR, 'static', 'images', 'company_logo.png')))
+    try:
+        logo = PILImage.open(logo_path).convert("RGBA")
+        qr_w = qr_img.size[0]
+        ls = int(qr_w * 0.18)
+        logo = logo.resize((ls, ls), PILImage.Resampling.LANCZOS)
+        pad = int(ls * 0.2)
+        cd = ls + pad * 2
+        circle = PILImage.new("RGBA", (cd, cd), (0, 0, 0, 0))
+        ImageDraw.Draw(circle).ellipse([0, 0, cd-1, cd-1], fill=(255, 255, 255, 255))
+        circle.paste(logo, (pad, pad), logo)
+        qr_img.paste(circle, ((qr_w - cd)//2, (qr_w - cd)//2), circle)
+    except Exception:
+        pass
+
+    qr_rgb = qr_img.convert("RGB")
+    qr_w, qr_h = qr_rgb.size
+    padding, text_area = 60, 120
+    canvas_w = qr_w + padding * 2
+    canvas_h = qr_h + padding * 2 + text_area
+
+    out = PILImage.new("RGB", (canvas_w, canvas_h), (255, 255, 255))
+    out.paste(qr_rgb, (padding, padding))
+    draw = ImageDraw.Draw(out)
+
+    try:
+        font_bold = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 48)
+        font_reg  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
+    except Exception:
+        font_bold = font_reg = ImageFont.load_default()
+
+    name = rider.name.upper()
+    role = f"Rider · {rider.rider_id}"
+
+    bbox = draw.textbbox((0, 0), name, font=font_bold)
+    draw.text(((canvas_w - (bbox[2]-bbox[0])) // 2, qr_h + padding + 20),
+              name, fill=(13, 27, 110), font=font_bold)
+    bbox2 = draw.textbbox((0, 0), role, font=font_reg)
+    draw.text(((canvas_w - (bbox2[2]-bbox2[0])) // 2, qr_h + padding + 78),
+              role, fill=(255, 107, 0), font=font_reg)
+
+    buf = io.BytesIO()
+    out.save(buf, format='JPEG', quality=95, dpi=(300, 300))
+    buf.seek(0)
+    response = HttpResponse(buf.read(), content_type='image/jpeg')
+    response['Content-Disposition'] = f'attachment; filename="rider_{rider.rider_id}_qr.jpg"'
+    return response

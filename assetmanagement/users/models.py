@@ -280,6 +280,7 @@ class Rider(models.Model):
     id_number = models.CharField(max_length=50, unique=True)
     plate_number = models.CharField(max_length=20)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+    qr_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):

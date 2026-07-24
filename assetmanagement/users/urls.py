@@ -15,6 +15,10 @@ urlpatterns = [
     path('public/<uuid:qr_token>/', public_views.user_public_profile, name='user_public_profile'),
     path('public/<uuid:qr_token>/qr.pdf', public_views.user_qr_pdf, name='user_qr_pdf'),
 
+    # Rider public profile + QR (no login required)
+    path('rider/<uuid:qr_token>/', public_views.rider_public_profile, name='rider_public_profile'),
+    path('rider/<uuid:qr_token>/qr.jpg', public_views.rider_qr_download, name='rider_qr_download'),
+
     # User profile (login required)
     path('<int:user_id>/', views.user_profile, name='profile'),
 
