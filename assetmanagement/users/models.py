@@ -90,15 +90,15 @@ def manage_user_profile(sender, instance, created, **kwargs):
     from django.conf import settings
     import os
 
-    # Check if we're in a read-only environment (like Vercel with SQLite)
+    # Skip profile creation in read-only SQLite environments (e.g. local dev without DB)
     is_readonly = (
-        not (os.environ.get('VERCEL') or os.environ.get('DATABASE_URL') or
-             'vercel.app' in os.environ.get('VERCEL_URL', '')) and
+        not os.environ.get('DATABASE_URL') and
         'sqlite3' in settings.DATABASES['default']['ENGINE']
     )
 
     if is_readonly:
         return  # Skip profile creation in read-only SQLite environments
+
 
     # Use atomic transaction to prevent race conditions
     try:
@@ -146,10 +146,8 @@ def manage_employee_profile(sender, instance, created, **kwargs):
     from crm.models import Employee
     import os
 
-    # Check if we're in a read-only environment (like Vercel with SQLite)
     is_readonly = (
-        not (os.environ.get('VERCEL') or os.environ.get('DATABASE_URL') or
-             'vercel.app' in os.environ.get('VERCEL_URL', '')) and
+        not os.environ.get('DATABASE_URL') and
         'sqlite3' in settings.DATABASES['default']['ENGINE']
     )
 

@@ -35,7 +35,6 @@ if allowed_hosts_env:
     ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',')]
 else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '10.246.23.10', 
-                     'fagiassets.vercel.app', '*.vercel.app', 
                      'fagiassets.fagitone.com', '*.fagitone.com', '*']
 
 
@@ -207,7 +206,6 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://fagiassets.vercel.app",
 ]
 
 # Allow all origins for development (for Electron app)
@@ -264,15 +262,7 @@ SESSION_COOKIE_HTTPONLY = True  # Prevent XSS attacks
 SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
 
 # Use database sessions for production (PostgreSQL), cache for development
-if os.environ.get('VERCEL') or os.environ.get('DATABASE_URL') or 'vercel.app' in os.environ.get('VERCEL_URL', ''):
-    # Production: Use database sessions with PostgreSQL
-    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-    # Additional production session settings
-    SESSION_COOKIE_DOMAIN = None  # Let Django handle domain automatically
-    SESSION_COOKIE_NAME = 'fagiassets_sessionid'  # Custom session cookie name
-else:
-    # Development: Use database sessions with SQLite
-    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 # Security Settings for Network Access
 SECURE_BROWSER_XSS_FILTER = True
