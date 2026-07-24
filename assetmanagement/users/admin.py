@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import UserProfile, UserSession, UserActivity
+from .models import UserProfile, UserSession, UserActivity, Rider
 
 
 class UserProfileInline(admin.StackedInline):
@@ -76,3 +76,16 @@ class UserActivityAdmin(admin.ModelAdmin):
     def description_short(self, obj):
         return obj.description[:100] + '...' if len(obj.description) > 100 else obj.description
     description_short.short_description = 'Description'
+
+
+@admin.register(Rider)
+class RiderAdmin(admin.ModelAdmin):
+    list_display = ['rider_id', 'name', 'phone', 'id_number', 'plate_number', 'status', 'created_at']
+    search_fields = ['rider_id', 'name', 'phone', 'id_number', 'plate_number']
+    list_filter = ['status', 'created_at']
+    readonly_fields = ['rider_id', 'created_at']
+    fieldsets = (
+        ('Rider Info', {'fields': ('rider_id', 'name', 'status')}),
+        ('Contact & ID', {'fields': ('phone', 'id_number', 'plate_number')}),
+        ('Meta', {'fields': ('created_at',)}),
+    )

@@ -268,6 +268,47 @@ def manage_employee_profile(sender, instance, created, **kwargs):
         print(f"Transaction failed for employee profile management: {e}")
 
 
+class Rider(models.Model):
+    """Permanent company riders — no system login, separate from employees."""
+
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+    ]
+
+    rider_id = models.CharField(max_length=20, unique=True, blank=True, editable=False)
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20)
+    id_number = models.CharField(max_length=50, unique=True)
+    plate_number = models.CharField(max_length=20)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.rider_id:
+            with transaction.atomic():
+                existing = Rider.objects.filter(
+                    rider_id__startswith='EMP'
+                ).values_list('rider_id', flat=True)
+                numbers = []
+                for rid in existing:
+                    try:
+                        n = rid[3:]
+                        if n.isdigit() and len(n) == 3:
+                            numbers.append(int(n))
+                    except (IndexError, ValueError):
+                        continue
+                next_num = max(numbers) + 1 if numbers else 1
+                self.rider_id = f"EMP{next_num:03d}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.rider_id} - {self.name}"
+
+    class Meta:
+        ordering = ['rider_id']
+
+
 class UserSession(models.Model):
     """Track user sessions for audit purposes"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sessions')
