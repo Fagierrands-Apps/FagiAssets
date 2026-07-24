@@ -2534,3 +2534,78 @@ def admin_reports(request):
 @user_passes_test(is_admin_user)
 def admin_leave_redirect(request):
     return redirect('crm:admin_leave_list')
+
+
+# ── Rider Management ──────────────────────────────────────────────────────────
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def rider_list(request):
+    from users.models import Rider
+    q = request.GET.get('q', '')
+    riders = Rider.objects.all()
+    if q:
+        riders = riders.filter(
+            Q(name__icontains=q) | Q(rider_id__icontains=q) |
+            Q(phone__icontains=q) | Q(plate_number__icontains=q) |
+            Q(id_number__icontains=q)
+        )
+    paginator = Paginator(riders, 20)
+    page = paginator.get_page(request.GET.get('page'))
+    return render(request, 'admin_dashboard/rider_list.html', {'page_obj': page, 'q': q})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def rider_create(request):
+    from users.models import Rider
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        id_number = request.POST.get('id_number', '').strip()
+        plate_number = request.POST.get('plate_number', '').strip()
+        status = request.POST.get('status', 'active')
+        if not all([name, phone, id_number, plate_number]):
+            messages.error(request, 'All fields are required.')
+        elif Rider.objects.filter(id_number=id_number).exists():
+            messages.error(request, 'A rider with that ID number already exists.')
+        else:
+            Rider.objects.create(name=name, phone=phone, id_number=id_number,
+                                 plate_number=plate_number, status=status)
+            messages.success(request, 'Rider added successfully.')
+            return redirect('admin_dashboard:rider_list')
+    return render(request, 'admin_dashboard/rider_form.html', {'action': 'Add'})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def rider_edit(request, rider_id):
+    from users.models import Rider
+    rider = get_object_or_404(Rider, id=rider_id)
+    if request.method == 'POST':
+        rider.name = request.POST.get('name', '').strip()
+        rider.phone = request.POST.get('phone', '').strip()
+        rider.id_number = request.POST.get('id_number', '').strip()
+        rider.plate_number = request.POST.get('plate_number', '').strip()
+        rider.status = request.POST.get('status', 'active')
+        if not all([rider.name, rider.phone, rider.id_number, rider.plate_number]):
+            messages.error(request, 'All fields are required.')
+        elif Rider.objects.filter(id_number=rider.id_number).exclude(id=rider_id).exists():
+            messages.error(request, 'A rider with that ID number already exists.')
+        else:
+            rider.save()
+            messages.success(request, 'Rider updated successfully.')
+            return redirect('admin_dashboard:rider_list')
+    return render(request, 'admin_dashboard/rider_form.html', {'action': 'Edit', 'rider': rider})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def rider_delete(request, rider_id):
+    from users.models import Rider
+    rider = get_object_or_404(Rider, id=rider_id)
+    if request.method == 'POST':
+        rider.delete()
+        messages.success(request, 'Rider deleted.')
+        return redirect('admin_dashboard:rider_list')
+    return render(request, 'admin_dashboard/rider_confirm_delete.html', {'rider': rider})

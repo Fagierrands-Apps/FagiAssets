@@ -1453,6 +1453,12 @@
                         </a>
                     </div>
                     <div class="nav-item">
+                        <a href="/admin-dashboard/riders/" class="nav-link {% if 'rider' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-motorcycle"></i>
+                            Riders
+                        </a>
+                    </div>
+                    <div class="nav-item">
                         <a href="/admin-dashboard/tasks/" class="nav-link {% if 'task' in request.resolver_match.url_name %}active{% endif %}">
                             <i class="fas fa-tasks"></i>
                             Tasks

@@ -88,6 +88,12 @@ urlpatterns = [
     # Leave Requests shortcut
     path('leave-requests/', views.admin_leave_redirect, name='leave_requests'),
 
+    # Rider Management
+    path('riders/', views.rider_list, name='rider_list'),
+    path('riders/add/', views.rider_create, name='rider_create'),
+    path('riders/<int:rider_id>/edit/', views.rider_edit, name='rider_edit'),
+    path('riders/<int:rider_id>/delete/', views.rider_delete, name='rider_delete'),
+
     # AJAX endpoints
     path('ajax/user-search/', views.ajax_user_search, name='ajax_user_search'),
     path('ajax/asset-search/', views.ajax_asset_search, name='ajax_asset_search'),

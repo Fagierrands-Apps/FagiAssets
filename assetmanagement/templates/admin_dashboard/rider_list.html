@@ -1,0 +1,79 @@
+{% extends 'admin_dashboard/base.html' %}
+{% block title %}Riders{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-motorcycle me-2"></i>Riders</h2>
+        <a href="{% url 'admin_dashboard:rider_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Add Rider
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body pb-0">
+            <form method="get" class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by name, ID, phone, plate...">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i></button>
+                    {% if q %}<a href="{% url 'admin_dashboard:rider_list' %}" class="btn btn-outline-danger ms-1"><i class="fas fa-times"></i></a>{% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for msg in messages %}
+            <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Rider ID</th><th>Name</th><th>Phone</th><th>ID Number</th><th>Plate No.</th><th>Status</th><th>Added</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rider in page_obj %}
+                    <tr>
+                        <td><span class="badge bg-secondary">{{ rider.rider_id }}</span></td>
+                        <td>{{ rider.name }}</td>
+                        <td>{{ rider.phone }}</td>
+                        <td>{{ rider.id_number }}</td>
+                        <td>{{ rider.plate_number }}</td>
+                        <td>
+                            {% if rider.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ rider.created_at|date:"d M Y" }}</td>
+                        <td>
+                            <a href="{% url 'admin_dashboard:rider_edit' rider.id %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'admin_dashboard:rider_delete' rider.id %}" class="btn btn-sm btn-outline-danger ms-1"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">No riders found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q }}">Previous</a></li>{% endif %}
+            <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q }}">Next</a></li>{% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
