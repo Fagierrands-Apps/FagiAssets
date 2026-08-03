@@ -263,10 +263,10 @@ class Rider(models.Model):
         ('inactive', 'Inactive'),
     ]
 
-    rider_id = models.CharField(max_length=20, unique=True, blank=True, editable=False)
+    rider_id = models.CharField(max_length=20, unique=True, blank=True)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
-    id_number = models.CharField(max_length=50, unique=True)
+    id_number = models.CharField(max_length=50, unique=True, blank=True, null=True)
     plate_number = models.CharField(max_length=20)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
     qr_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)

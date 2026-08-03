@@ -2562,16 +2562,22 @@ def rider_create(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         phone = request.POST.get('phone', '').strip()
-        id_number = request.POST.get('id_number', '').strip()
+        id_number = request.POST.get('id_number', '').strip() or None
         plate_number = request.POST.get('plate_number', '').strip()
         status = request.POST.get('status', 'active')
-        if not all([name, phone, id_number, plate_number]):
-            messages.error(request, 'All fields are required.')
-        elif Rider.objects.filter(id_number=id_number).exists():
+        custom_rider_id = request.POST.get('rider_id', '').strip()
+        if not all([name, phone, plate_number]):
+            messages.error(request, 'Name, phone and plate number are required.')
+        elif id_number and Rider.objects.filter(id_number=id_number).exists():
             messages.error(request, 'A rider with that ID number already exists.')
+        elif custom_rider_id and Rider.objects.filter(rider_id=custom_rider_id).exists():
+            messages.error(request, 'A rider with that Rider ID already exists.')
         else:
-            Rider.objects.create(name=name, phone=phone, id_number=id_number,
-                                 plate_number=plate_number, status=status)
+            rider = Rider(name=name, phone=phone, id_number=id_number,
+                          plate_number=plate_number, status=status)
+            if custom_rider_id:
+                rider.rider_id = custom_rider_id
+            rider.save()
             messages.success(request, 'Rider added successfully.')
             return redirect('admin_dashboard:rider_list')
     return render(request, 'admin_dashboard/rider_form.html', {'action': 'Add'})
@@ -2585,13 +2591,18 @@ def rider_edit(request, rider_id):
     if request.method == 'POST':
         rider.name = request.POST.get('name', '').strip()
         rider.phone = request.POST.get('phone', '').strip()
-        rider.id_number = request.POST.get('id_number', '').strip()
+        rider.id_number = request.POST.get('id_number', '').strip() or None
         rider.plate_number = request.POST.get('plate_number', '').strip()
         rider.status = request.POST.get('status', 'active')
-        if not all([rider.name, rider.phone, rider.id_number, rider.plate_number]):
-            messages.error(request, 'All fields are required.')
-        elif Rider.objects.filter(id_number=rider.id_number).exclude(id=rider_id).exists():
+        custom_rider_id = request.POST.get('rider_id', '').strip()
+        if custom_rider_id:
+            rider.rider_id = custom_rider_id
+        if not all([rider.name, rider.phone, rider.plate_number]):
+            messages.error(request, 'Name, phone and plate number are required.')
+        elif rider.id_number and Rider.objects.filter(id_number=rider.id_number).exclude(id=rider_id).exists():
             messages.error(request, 'A rider with that ID number already exists.')
+        elif Rider.objects.filter(rider_id=rider.rider_id).exclude(id=rider_id).exists():
+            messages.error(request, 'A rider with that Rider ID already exists.')
         else:
             rider.save()
             messages.success(request, 'Rider updated successfully.')
