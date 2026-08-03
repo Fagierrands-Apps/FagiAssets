@@ -113,11 +113,11 @@ else:
         # PRIMARY: cPanel PostgreSQL
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'distinc3_crm'),
-            'USER': os.environ.get('DB_USER', 'distinc3_crm2'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'Pa7swrd1990@'),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
+            'NAME': os.environ.get('DB_NAME', 'postgres'),
+            'USER': os.environ.get('DB_USER', 'postgres.dxesmzogjpxswxhsomgf'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'OnFRtf0SmpHwgNaQ'),
+            'HOST': os.environ.get('DB_HOST', 'aws-0-ap-southeast-1.pooler.supabase.com'),
+            'PORT': os.environ.get('DB_PORT', '6543'),
             'OPTIONS': {
                 'connect_timeout': 30,
             },

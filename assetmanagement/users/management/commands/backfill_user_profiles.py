@@ -26,19 +26,22 @@ class Command(BaseCommand):
                 created_profiles += 1
 
             # Backfill Employee
-            employee, created = Employee.objects.get_or_create(
-                user=user,
-                defaults={
-                    'employee_id': profile.employee_id or '',
-                    'position': profile.job_title or 'User',
-                    'employment_status': 'active',
-                    'employment_type': 'full_time',
-                    'role': 'user',
-                    'hire_date': timezone.now().date(),
-                }
-            )
-            if created:
-                created_employees += 1
+            try:
+                employee, created = Employee.objects.get_or_create(
+                    user=user,
+                    defaults={
+                        'employee_id': profile.employee_id or '',
+                        'position': profile.job_title or 'User',
+                        'employment_status': 'active',
+                        'employment_type': 'full_time',
+                        'role': 'user',
+                        'hire_date': timezone.now().date(),
+                    }
+                )
+                if created:
+                    created_employees += 1
+            except Exception as e:
+                self.stdout.write(f'Skipped Employee for {user.username}: {e}')
 
         self.stdout.write(self.style.SUCCESS(
             f'Done. Created {created_profiles} UserProfile(s) and {created_employees} Employee record(s).'
