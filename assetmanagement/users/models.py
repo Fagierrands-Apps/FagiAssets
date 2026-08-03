@@ -86,18 +86,12 @@ class UserProfile(models.Model):
 @receiver(post_save, sender=User)
 def manage_user_profile(sender, instance, created, **kwargs):
     """Create or update user profile when user is created or updated"""
-    # Skip profile creation in read-only environments
     from django.conf import settings
     import os
 
-    # Skip profile creation in read-only SQLite environments (e.g. local dev without DB)
-    is_readonly = (
-        not os.environ.get('DATABASE_URL') and
-        'sqlite3' in settings.DATABASES['default']['ENGINE']
-    )
-
-    if is_readonly:
-        return  # Skip profile creation in read-only SQLite environments
+    # Only skip in local SQLite dev (LOCAL_SQLITE=1)
+    if os.environ.get('LOCAL_SQLITE') == '1':
+        return
 
 
     # Use atomic transaction to prevent race conditions
@@ -141,18 +135,13 @@ def manage_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def manage_employee_profile(sender, instance, created, **kwargs):
     """Create or update employee profile when user is created or updated"""
-    # Skip profile creation in read-only environments
     from django.conf import settings
     from crm.models import Employee
     import os
 
-    is_readonly = (
-        not os.environ.get('DATABASE_URL') and
-        'sqlite3' in settings.DATABASES['default']['ENGINE']
-    )
-
-    if is_readonly:
-        return  # Skip profile creation in read-only SQLite environments
+    # Only skip in local SQLite dev (LOCAL_SQLITE=1)
+    if os.environ.get('LOCAL_SQLITE') == '1':
+        return
 
     # Use atomic transaction to prevent race conditions
     try:
