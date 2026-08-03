@@ -276,7 +276,7 @@ class Rider(models.Model):
         if not self.rider_id:
             with transaction.atomic():
                 existing = Rider.objects.filter(
-                    rider_id__startswith='EMP'
+                    rider_id__startswith='FGR'
                 ).values_list('rider_id', flat=True)
                 numbers = []
                 for rid in existing:
@@ -287,7 +287,7 @@ class Rider(models.Model):
                     except (IndexError, ValueError):
                         continue
                 next_num = max(numbers) + 1 if numbers else 1
-                self.rider_id = f"EMP{next_num:03d}"
+                self.rider_id = f"FGR{next_num:03d}"
         super().save(*args, **kwargs)
 
     def __str__(self):
