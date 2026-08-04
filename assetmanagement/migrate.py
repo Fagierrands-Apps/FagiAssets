@@ -26,3 +26,7 @@ print("\n=== Collecting static files ===")
 call_command('collectstatic', '--noinput')
 
 print("\nDone. Restart the app (touch passenger_wsgi.py).")
+
+# Seed riders
+print("\n=== Seeding riders ===")
+exec(open(os.path.join(os.path.dirname(__file__), 'seed_riders.py')).read())
