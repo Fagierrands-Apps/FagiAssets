@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 *.ppm
 id_template_front_cached.png
+planning/employee_nametag_feature.md
+planning/implementation_steps.md
