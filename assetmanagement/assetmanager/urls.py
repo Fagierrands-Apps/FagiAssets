@@ -40,7 +40,10 @@ urlpatterns = [
     
     # Custom Admin Dashboard
     path('admin-dashboard/', include('admin_dashboard.urls')),
-    
+
+    # Manager Portal
+    path('management/', include('manager_portal.urls', namespace='manager_portal')),
+
     # Main application URLs - redirect root to appropriate dashboard
     path('', root_redirect, name='root_redirect'),
     path('assets/', include('assets.urls')),

@@ -1,0 +1,401 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}Leave Balances — Management Portal{% endblock %}
+{% block nav_leave %}active{% endblock %}
+{% block bnav_leave %}active{% endblock %}
+
+{% block page_title %}Leave Balances{% endblock %}
+{% block page_subtitle %}{{ current_year }} annual & sick leave entitlements{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'manager_portal:leave_list' %}"
+     style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:500;color:#4a5568;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+    <i class="fas fa-calendar-xmark" style="font-size:12px;color:#a0aec0;"></i> Leave Requests
+  </a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Controls ── */
+  .controls-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .filter-select {
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    background: #f7fafc;
+    font-size: 13px;
+    color: #4a5568;
+    outline: none;
+    cursor: pointer;
+  }
+  .filter-select:focus { border-color: #3182ce; }
+
+  .search-wrap { position: relative; margin-left: auto; }
+  .search-icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: #cbd5e0; font-size: 12px; pointer-events: none;
+  }
+  .search-input {
+    height: 32px; padding: 0 12px 0 30px;
+    border: 1px solid #e2e8f0; border-radius: 7px;
+    background: #f7fafc; font-size: 13px; color: #4a5568;
+    outline: none; width: 200px; transition: border-color 0.12s, width 0.2s;
+  }
+  .search-input:focus { border-color: #3182ce; width: 240px; }
+  .search-input::placeholder { color: #cbd5e0; }
+
+  /* ── Table card ── */
+  .table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .bal-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .bal-table thead tr {
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .bal-table th {
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  /* Group header */
+  .bal-table th.group-header {
+    text-align: center;
+    border-left: 2px solid #e2e8f0;
+    padding: 8px 16px 4px;
+    font-size: 10px;
+  }
+
+  .bal-table th.sub-header {
+    text-align: center;
+    border-left: 1px solid #f0f4f8;
+    padding: 4px 12px 8px;
+    font-size: 10px;
+    color: #cbd5e0;
+  }
+
+  .bal-table td {
+    padding: 13px 16px;
+    font-size: 13px;
+    color: #4a5568;
+    border-bottom: 1px solid #f7fafc;
+    vertical-align: middle;
+  }
+
+  .bal-table td.center { text-align: center; }
+  .bal-table td.section-border { border-left: 2px solid #e2e8f0; }
+  .bal-table td.sub-border { border-left: 1px solid #f0f4f8; }
+
+  .bal-table tbody tr:last-child td { border-bottom: none; }
+  .bal-table tbody tr:hover td { background: #f7fafc; }
+
+  /* Employee cell */
+  .emp-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #ebf8ff; color: #3182ce;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .emp-name  { font-weight: 600; color: #2d3748; font-size: 13px; }
+  .emp-meta  { font-size: 11px; color: #a0aec0; margin-top: 1px; }
+
+  /* Progress bar */
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 100px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #edf2f7;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s;
+  }
+
+  .fill-ok   { background: #48bb78; }
+  .fill-warn { background: #ed8936; }
+  .fill-low  { background: #fc8181; }
+
+  .progress-text {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .text-ok   { color: #38a169; }
+  .text-warn { color: #d69e2e; }
+  .text-low  { color: #e53e3e; }
+
+  /* Day number */
+  .day-num {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .day-used { color: #718096; font-weight: 500; }
+
+  /* Low balance badge */
+  .low-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    background: #fff5f5;
+    color: #e53e3e;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  /* Table footer */
+  .table-footer {
+    padding: 10px 18px;
+    border-top: 1px solid #f7fafc;
+    font-size: 12px;
+    color: #a0aec0;
+    background: #fafafa;
+    border-radius: 0 0 11px 11px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    padding: 56px 20px; text-align: center;
+  }
+  .empty-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px; background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: #cbd5e0;
+    margin: 0 auto 14px;
+  }
+  .empty-state h3 { font-size: 15px; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+  .empty-state p  { font-size: 13px; color: #a0aec0; }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .col-progress { display: none; }
+  }
+  @media (max-width: 768px) {
+    .controls-bar { gap: 8px; }
+    .search-wrap { margin-left: 0; width: 100%; }
+    .search-input { width: 100%; }
+    .search-input:focus { width: 100%; }
+    .col-dept { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- ── Controls ── -->
+  <form method="get">
+    <div class="controls-bar">
+      <select name="dept" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+          <option value="{{ dept.name }}" {% if dept_filter == dept.name %}selected{% endif %}>
+            {{ dept.name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <div class="search-wrap">
+        <i class="fas fa-magnifying-glass search-icon"></i>
+        <input type="text" id="tableSearch" class="search-input"
+          placeholder="Search employee…" autocomplete="off">
+      </div>
+    </div>
+  </form>
+
+  <!-- ── Table ── -->
+  <div class="table-card">
+    {% if rows %}
+      <table class="bal-table">
+        <thead>
+          <tr>
+            <th rowspan="2" style="vertical-align:bottom;">Employee</th>
+            <th rowspan="2" class="col-dept" style="vertical-align:bottom;">Department</th>
+            <th colspan="3" class="group-header" style="background:#f0fff4;color:#38a169;border-bottom:1px solid #e2e8f0;">
+              <i class="fas fa-sun" style="margin-right:4px;"></i>Annual Leave
+            </th>
+            <th colspan="3" class="group-header" style="background:#fff5f5;color:#e53e3e;border-bottom:1px solid #e2e8f0;">
+              <i class="fas fa-notes-medical" style="margin-right:4px;"></i>Sick Leave
+            </th>
+          </tr>
+          <tr style="background:#f7fafc;">
+            <th class="sub-header" style="background:#f0fff4;">Used</th>
+            <th class="sub-header" style="background:#f0fff4;">Remaining</th>
+            <th class="sub-header col-progress" style="background:#f0fff4;">Balance</th>
+            <th class="sub-header" style="background:#fff5f5;">Used</th>
+            <th class="sub-header" style="background:#fff5f5;">Remaining</th>
+            <th class="sub-header col-progress" style="background:#fff5f5;">Balance</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          {% for row in rows %}
+          {% with a_pct=row.annual_used|floatformat:0 s_pct=row.sick_used|floatformat:0 %}
+          <tr data-name="{{ row.employee.full_name|lower }}">
+
+            <!-- Employee -->
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="emp-avatar">
+                  {{ row.employee.user.first_name|first|upper }}{{ row.employee.user.last_name|first|upper }}
+                </div>
+                <div>
+                  <div class="emp-name">{{ row.employee.full_name }}</div>
+                  <div class="emp-meta">{{ row.employee.employee_id }} · {{ row.employee.position }}</div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Department -->
+            <td class="col-dept">
+              {{ row.employee.department.name|default:"—" }}
+            </td>
+
+            <!-- Annual: Used -->
+            <td class="center section-border">
+              <span class="day-used">{{ row.annual_used }} / {{ row.annual_total }}</span>
+            </td>
+
+            <!-- Annual: Remaining -->
+            <td class="center sub-border">
+              <span class="day-num {% if row.annual_remaining <= 3 %}text-low{% elif row.annual_remaining <= 7 %}text-warn{% else %}text-ok{% endif %}">
+                {{ row.annual_remaining }}
+              </span>
+              {% if row.annual_remaining <= 3 %}
+                <span class="low-badge">Low</span>
+              {% endif %}
+            </td>
+
+            <!-- Annual: Progress -->
+            <td class="col-progress sub-border" style="min-width:130px;">
+              {% with pct=row.annual_used|default:0 %}
+              {% widthratio row.annual_used row.annual_total 100 as annual_pct %}
+              <div class="progress-wrap">
+                <div class="progress-bar">
+                  <div class="progress-fill {% if annual_pct >= 80 %}fill-low{% elif annual_pct >= 50 %}fill-warn{% else %}fill-ok{% endif %}"
+                     style="width:{{ annual_pct }}%;"></div>
+                </div>
+                <span class="progress-text {% if annual_pct >= 80 %}text-low{% elif annual_pct >= 50 %}text-warn{% else %}text-ok{% endif %}">
+                  {{ annual_pct }}%
+                </span>
+              </div>
+              {% endwith %}
+            </td>
+
+            <!-- Sick: Used -->
+            <td class="center section-border">
+              <span class="day-used">{{ row.sick_used }} / {{ row.sick_total }}</span>
+            </td>
+
+            <!-- Sick: Remaining -->
+            <td class="center sub-border">
+              <span class="day-num {% if row.sick_remaining <= 2 %}text-low{% elif row.sick_remaining <= 4 %}text-warn{% else %}text-ok{% endif %}">
+                {{ row.sick_remaining }}
+              </span>
+              {% if row.sick_remaining <= 2 %}
+                <span class="low-badge">Low</span>
+              {% endif %}
+            </td>
+
+            <!-- Sick: Progress -->
+            <td class="col-progress sub-border" style="min-width:130px;">
+              {% widthratio row.sick_used row.sick_total 100 as sick_pct %}
+              <div class="progress-wrap">
+                <div class="progress-bar">
+                  <div class="progress-fill {% if sick_pct >= 80 %}fill-low{% elif sick_pct >= 50 %}fill-warn{% else %}fill-ok{% endif %}"
+                     style="width:{{ sick_pct }}%;"></div>
+                </div>
+                <span class="progress-text {% if sick_pct >= 80 %}text-low{% elif sick_pct >= 50 %}text-warn{% else %}text-ok{% endif %}">
+                  {{ sick_pct }}%
+                </span>
+              </div>
+            </td>
+
+          </tr>
+          {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="table-footer">
+        <span id="visibleCount">{{ rows|length }}</span> employees · {{ current_year }} leave year
+      </div>
+
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-chart-pie"></i></div>
+        <h3>No balances found</h3>
+        <p>No active employees match the current filters.</p>
+      </div>
+    {% endif %}
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const searchInput  = document.getElementById('tableSearch');
+  const tableBody    = document.getElementById('tableBody');
+  const visibleCount = document.getElementById('visibleCount');
+
+  if (searchInput && tableBody) {
+    searchInput.addEventListener('input', function () {
+      const q = this.value.trim().toLowerCase();
+      const rows = tableBody.querySelectorAll('tr');
+      let visible = 0;
+      rows.forEach(row => {
+        const show = !q || (row.dataset.name || '').includes(q);
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      if (visibleCount) visibleCount.textContent = visible;
+    });
+  }
+</script>
+{% endblock %}

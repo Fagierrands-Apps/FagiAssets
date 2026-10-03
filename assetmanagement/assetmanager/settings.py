@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'admin_dashboard',
     'crm_integration',
     'crm',
+    'manager_portal',
 ]
 
 MIDDLEWARE = [

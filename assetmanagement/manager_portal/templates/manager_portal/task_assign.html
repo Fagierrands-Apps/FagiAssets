@@ -1,0 +1,375 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}Assign Task — Management Portal{% endblock %}
+{% block nav_tasks %}active{% endblock %}
+{% block bnav_tasks %}active{% endblock %}
+
+{% block page_title %}Assign Task{% endblock %}
+{% block page_subtitle %}Create and assign a new task to a team member{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'manager_portal:tasks' %}"
+     style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:500;color:#4a5568;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+    <i class="fas fa-arrow-left" style="font-size:11px;color:#a0aec0;"></i> Back to Tasks
+  </a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    max-width: 680px;
+  }
+
+  .form-card-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f7fafc;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .form-card-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: #ebf8ff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: #3182ce;
+  }
+
+  .form-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a365d;
+  }
+
+  .form-card-body { padding: 24px; }
+
+  /* Error alert */
+  .form-error {
+    background: #fff5f5;
+    border: 1.5px solid #fed7d7;
+    border-radius: 9px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #c53030;
+  }
+  .form-error ul { margin: 6px 0 0 16px; }
+  .form-error li { margin-bottom: 2px; }
+
+  /* Field */
+  .f-field { margin-bottom: 20px; }
+
+  .f-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 7px;
+  }
+
+  .f-required { color: #e53e3e; margin-left: 2px; }
+
+  .f-input, .f-select, .f-textarea {
+    width: 100%;
+    background: #f7fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 11px 14px;
+    font-size: 14px;
+    color: #1a202c;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    font-family: inherit;
+  }
+
+  .f-input:focus, .f-select:focus, .f-textarea:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49,130,206,0.1);
+    background: #ffffff;
+  }
+
+  .f-input::placeholder, .f-textarea::placeholder { color: #cbd5e0; }
+
+  .f-select { cursor: pointer; }
+
+  .f-textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+
+  .f-hint { font-size: 11px; color: #a0aec0; margin-top: 5px; }
+
+  /* Two-col grid */
+  .f-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* Employee select with avatar preview */
+  .emp-select-wrap { position: relative; }
+
+  .emp-preview {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f0fff4;
+    border: 1px solid #c6f6d5;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #2d3748;
+  }
+  .emp-preview.visible { display: flex; }
+
+  .emp-preview-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #ebf8ff; color: #3182ce;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Priority pills row */
+  .priority-options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .prio-option { display: none; }
+
+  .prio-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #718096;
+    cursor: pointer;
+    transition: all 0.12s;
+    user-select: none;
+  }
+
+  .prio-option:checked + .prio-label {
+    border-color: currentColor;
+    font-weight: 600;
+  }
+
+  .prio-label.urgent { color: #e53e3e; }
+  .prio-label.high   { color: #d69e2e; }
+  .prio-label.medium { color: #3182ce; }
+  .prio-label.low    { color: #718096; }
+
+  .prio-option.urgent:checked  + .prio-label { background: #fff5f5; border-color: #fed7d7; }
+  .prio-option.high:checked    + .prio-label { background: #fffbeb; border-color: #fbd38d; }
+  .prio-option.medium:checked  + .prio-label { background: #ebf8ff; border-color: #90cdf4; }
+  .prio-option.low:checked     + .prio-label { background: #f7fafc; border-color: #cbd5e0; }
+
+  /* Submit row */
+  .form-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #f7fafc;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .btn-submit {
+    padding: 11px 28px;
+    background: #1a365d;
+    border: none;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-submit:hover { background: #2c4a7c; box-shadow: 0 4px 12px rgba(26,54,93,0.2); }
+
+  .btn-cancel {
+    padding: 11px 20px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #718096;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.12s;
+    display: inline-flex;
+    align-items: center;
+  }
+  .btn-cancel:hover { background: #f7fafc; }
+
+  @media (max-width: 600px) {
+    .f-row { grid-template-columns: 1fr; }
+    .form-card { max-width: 100%; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-card">
+
+  <div class="form-card-header">
+    <div class="form-card-icon"><i class="fas fa-plus"></i></div>
+    <span class="form-card-title">New Task</span>
+  </div>
+
+  {% if errors %}
+    <div style="padding:16px 24px 0;">
+      <div class="form-error">
+        <strong><i class="fas fa-circle-exclamation"></i> Please fix the following:</strong>
+        <ul>
+          {% for err in errors %}<li>{{ err }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <div class="form-card-body">
+
+      <!-- Title -->
+      <div class="f-field">
+        <label class="f-label">Task Title <span class="f-required">*</span></label>
+        <input type="text" name="title" class="f-input"
+          value="{{ post.title|default:'' }}"
+          placeholder="e.g. Follow up with client, Complete weekly report…"
+          required autofocus>
+      </div>
+
+      <!-- Description -->
+      <div class="f-field">
+        <label class="f-label">Description</label>
+        <textarea name="description" class="f-textarea"
+          placeholder="Provide details about what needs to be done…">{{ post.description|default:'' }}</textarea>
+      </div>
+
+      <!-- Assign to -->
+      <div class="f-field">
+        <label class="f-label">Assign To <span class="f-required">*</span></label>
+        <div class="emp-select-wrap">
+          <select name="assigned_to" class="f-select" id="empSelect" required onchange="updateEmpPreview(this)">
+            <option value="">— Select employee —</option>
+            {% regroup employees by department as dept_list %}
+            {% for dept in dept_list %}
+              <optgroup label="{{ dept.grouper.name|default:'No Department' }}">
+                {% for emp in dept.list %}
+                  <option value="{{ emp.pk }}"
+                    data-initials="{{ emp.user.first_name|first|upper }}{{ emp.user.last_name|first|upper }}"
+                    data-dept="{{ emp.department.name|default:'No Department' }}"
+                    {% if post.assigned_to == emp.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ emp.full_name }} ({{ emp.employee_id }})
+                  </option>
+                {% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+          <div class="emp-preview" id="empPreview">
+            <div class="emp-preview-avatar" id="empInitials"></div>
+            <div>
+              <span id="empPreviewName" style="font-weight:600;color:#1a365d;"></span>
+              <span id="empPreviewDept" style="font-size:11px;color:#a0aec0;margin-left:6px;"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Priority + Due date -->
+      <div class="f-row">
+        <div class="f-field">
+          <label class="f-label">Priority</label>
+          <div class="priority-options">
+            {% for val, label in  task_priorities|default:"" %}{% endfor %}
+            <input type="radio" name="priority" value="low" id="prio_low"
+              class="prio-option low" {% if post.priority == 'low' or not post %}{% endif %}>
+            <label for="prio_low" class="prio-label low"><i class="fas fa-minus"></i>Low</label>
+
+            <input type="radio" name="priority" value="medium" id="prio_medium"
+              class="prio-option medium" {% if not post or post.priority == 'medium' %}checked{% endif %}>
+            <label for="prio_medium" class="prio-label medium"><i class="fas fa-equals"></i>Medium</label>
+
+            <input type="radio" name="priority" value="high" id="prio_high"
+              class="prio-option high" {% if post.priority == 'high' %}checked{% endif %}>
+            <label for="prio_high" class="prio-label high"><i class="fas fa-arrow-up"></i>High</label>
+
+            <input type="radio" name="priority" value="urgent" id="prio_urgent"
+              class="prio-option urgent" {% if post.priority == 'urgent' %}checked{% endif %}>
+            <label for="prio_urgent" class="prio-label urgent"><i class="fas fa-fire"></i>Urgent</label>
+          </div>
+        </div>
+
+        <div class="f-field">
+          <label class="f-label">Due Date &amp; Time</label>
+          <input type="datetime-local" name="due_date" class="f-input"
+            value="{{ post.due_date|default:'' }}">
+          <div class="f-hint">Leave blank for no deadline.</div>
+        </div>
+      </div>
+
+      <!-- Estimated hours -->
+      <div class="f-field" style="max-width:200px;">
+        <label class="f-label">Estimated Hours</label>
+        <input type="number" name="estimated_hours" class="f-input"
+          value="{{ post.estimated_hours|default:'' }}"
+          placeholder="e.g. 2.5" min="0.5" max="200" step="0.5">
+      </div>
+
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-submit">
+        <i class="fas fa-paper-plane"></i> Assign Task
+      </button>
+      <a href="{% url 'manager_portal:tasks' %}" class="btn-cancel">Cancel</a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function updateEmpPreview(sel) {
+    const opt     = sel.options[sel.selectedIndex];
+    const preview = document.getElementById('empPreview');
+    const initEl  = document.getElementById('empInitials');
+    const nameEl  = document.getElementById('empPreviewName');
+    const deptEl  = document.getElementById('empPreviewDept');
+
+    if (sel.value) {
+      initEl.textContent = opt.dataset.initials || '?';
+      nameEl.textContent = opt.text.split(' (')[0];
+      deptEl.textContent = opt.dataset.dept || '';
+      preview.classList.add('visible');
+    } else {
+      preview.classList.remove('visible');
+    }
+  }
+
+  // Restore preview if form re-rendered with errors
+  const sel = document.getElementById('empSelect');
+  if (sel && sel.value) updateEmpPreview(sel);
+</script>
+{% endblock %}

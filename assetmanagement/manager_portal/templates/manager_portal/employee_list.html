@@ -1,0 +1,313 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}Employees — Management Portal{% endblock %}
+{% block nav_employees %}active{% endblock %}
+{% block bnav_employees %}active{% endblock %}
+
+{% block page_title %}Employees{% endblock %}
+{% block page_subtitle %}{{ total_count }} active staff member{{ total_count|pluralize }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'manager_portal:employee_add' %}"
+     style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#1a365d;border:1px solid #1a365d;border-radius:8px;font-size:13px;font-weight:600;color:#fff;text-decoration:none;">
+    <i class="fas fa-user-plus" style="font-size:11px;"></i> Add Employee
+  </a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Filters ── */
+  .filters-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .filter-select {
+    height: 34px; padding: 0 10px;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    background: #f7fafc; font-size: 13px; color: #4a5568;
+    outline: none; cursor: pointer;
+  }
+  .filter-select:focus { border-color: #3182ce; }
+
+  .search-wrap { position: relative; margin-left: auto; }
+  .search-icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%); color: #cbd5e0;
+    font-size: 12px; pointer-events: none;
+  }
+  .search-input {
+    height: 34px; padding: 0 12px 0 30px;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    background: #f7fafc; font-size: 13px; color: #4a5568;
+    outline: none; width: 220px; transition: border-color 0.12s, width 0.2s;
+  }
+  .search-input:focus { border-color: #3182ce; width: 260px; }
+  .search-input::placeholder { color: #cbd5e0; }
+
+  /* ── Table card ── */
+  .table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .emp-table { width: 100%; border-collapse: collapse; }
+
+  .emp-table thead tr {
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .emp-table th {
+    padding: 10px 16px;
+    font-size: 11px; font-weight: 700; color: #a0aec0;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    text-align: left; white-space: nowrap;
+  }
+
+  .emp-table td {
+    padding: 13px 16px;
+    font-size: 13px; color: #4a5568;
+    border-bottom: 1px solid #f7fafc;
+    vertical-align: middle;
+  }
+  .emp-table tbody tr:last-child td { border-bottom: none; }
+  .emp-table tbody tr:hover td { background: #f7fafc; }
+
+  /* Employee cell */
+  .emp-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: #ebf8ff; color: #3182ce;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .emp-name  { font-weight: 600; color: #1a365d; font-size: 13px; }
+  .emp-id    { font-size: 11px; color: #a0aec0; margin-top: 1px; }
+  .emp-pos   { font-size: 12px; color: #718096; }
+
+  /* Role badge */
+  .role-badge {
+    display: inline-block;
+    padding: 2px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+    background: #f7fafc; color: #4a5568;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+  }
+
+  /* Type badge */
+  .type-badge {
+    display: inline-block;
+    padding: 2px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .type-full_time  { background: #f0fff4; color: #38a169; }
+  .type-part_time  { background: #ebf8ff; color: #3182ce; }
+  .type-contract   { background: #fffbeb; color: #d69e2e; }
+  .type-intern     { background: #faf5ff; color: #805ad5; }
+
+  /* Action buttons */
+  .row-actions { display: flex; gap: 6px; }
+
+  .btn-row {
+    height: 28px; padding: 0 10px;
+    border-radius: 6px; font-size: 12px; font-weight: 500;
+    border: 1px solid #e2e8f0; background: #f7fafc;
+    color: #4a5568; text-decoration: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: background 0.12s;
+  }
+  .btn-row:hover { background: #edf2f7; color: #1a365d; }
+  .btn-row.primary { background: #ebf8ff; border-color: #90cdf4; color: #3182ce; }
+  .btn-row.primary:hover { background: #bee3f8; }
+
+  /* Table footer */
+  .table-footer {
+    padding: 10px 18px;
+    border-top: 1px solid #f7fafc;
+    font-size: 12px; color: #a0aec0;
+    background: #fafafa;
+    border-radius: 0 0 11px 11px;
+  }
+
+  /* Empty */
+  .empty-state { padding: 60px 20px; text-align: center; }
+  .empty-icon {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: #f7fafc; border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: #cbd5e0; margin: 0 auto 14px;
+  }
+  .empty-state h3 { font-size: 15px; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+  .empty-state p  { font-size: 13px; color: #a0aec0; }
+
+  /* Responsive */
+  @media (max-width: 1024px) { .col-type, .col-phone { display: none; } }
+  @media (max-width: 768px) {
+    .col-dept, .col-role { display: none; }
+    .filters-bar { gap: 8px; }
+    .search-wrap { margin-left: 0; width: 100%; }
+    .search-input { width: 100%; }
+    .search-input:focus { width: 100%; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- ── Filters ── -->
+  <form method="get">
+    <div class="filters-bar">
+      <select name="dept" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+          <option value="{{ dept.name }}" {% if dept_filter == dept.name %}selected{% endif %}>
+            {{ dept.name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <select name="role" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Roles</option>
+        {% for val, label in role_choices %}
+          <option value="{{ val }}" {% if role_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="type" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Types</option>
+        {% for val, label in type_choices %}
+          <option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+
+      <div class="search-wrap">
+        <i class="fas fa-magnifying-glass search-icon"></i>
+        <input type="text" name="q" value="{{ search_q }}"
+          class="search-input" placeholder="Search name or ID…" autocomplete="off">
+      </div>
+    </div>
+  </form>
+
+  <!-- ── Table ── -->
+  <div class="table-card">
+    {% if employees %}
+      <table class="emp-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Position</th>
+            <th class="col-dept">Department</th>
+            <th class="col-role">Role</th>
+            <th class="col-type">Type</th>
+            <th class="col-phone">Phone</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="empTableBody">
+          {% for emp in employees %}
+          <tr data-name="{{ emp.full_name|lower }} {{ emp.employee_id|lower }}">
+
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="emp-avatar">
+                  {{ emp.user.first_name|first|upper }}{{ emp.user.last_name|first|upper }}
+                </div>
+                <div>
+                  <div class="emp-name">{{ emp.full_name }}</div>
+                  <div class="emp-id">{{ emp.employee_id }}</div>
+                </div>
+              </div>
+            </td>
+
+            <td><span class="emp-pos">{{ emp.position }}</span></td>
+
+            <td class="col-dept">{{ emp.department.name|default:"—" }}</td>
+
+            <td class="col-role">
+              <span class="role-badge">{{ emp.get_role_display }}</span>
+            </td>
+
+            <td class="col-type">
+              <span class="type-badge type-{{ emp.employment_type }}">
+                {{ emp.get_employment_type_display }}
+              </span>
+            </td>
+
+            <td class="col-phone">{{ emp.phone|default:"—" }}</td>
+
+            <td>
+              <div class="row-actions">
+                <a href="{% url 'manager_portal:employee_detail' emp.pk %}" class="btn-row primary">
+                  <i class="fas fa-eye"></i> View
+                </a>
+                <a href="{% url 'manager_portal:employee_edit' emp.pk %}" class="btn-row">
+                  <i class="fas fa-pen"></i> Edit
+                </a>
+              </div>
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="table-footer">
+        <span id="visibleCount">{{ employees|length }}</span> employee{{ employees|length|pluralize }} shown
+        {% if search_q or dept_filter or role_filter or type_filter %}
+          · <a href="{% url 'manager_portal:employee_list' %}" style="color:#3182ce;">Clear filters</a>
+        {% endif %}
+      </div>
+
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-users"></i></div>
+        <h3>No employees found</h3>
+        <p>
+          {% if search_q or dept_filter or role_filter or type_filter %}
+            No employees match the current filters.
+            <a href="{% url 'manager_portal:employee_list' %}" style="color:#3182ce;">Clear filters</a>
+          {% else %}
+            No active employees yet.
+            <a href="{% url 'manager_portal:employee_add' %}" style="color:#3182ce;">Add the first one.</a>
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Client-side search (supplements server-side)
+  const input = document.querySelector('input[name="q"]');
+  const body  = document.getElementById('empTableBody');
+  const count = document.getElementById('visibleCount');
+
+  if (input && body) {
+    input.addEventListener('input', function () {
+      const q = this.value.trim().toLowerCase();
+      let visible = 0;
+      body.querySelectorAll('tr').forEach(row => {
+        const show = !q || (row.dataset.name || '').includes(q);
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      if (count) count.textContent = visible;
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,596 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}Attendance — Management Portal{% endblock %}
+{% block nav_attendance %}active{% endblock %}
+{% block bnav_attendance %}active{% endblock %}
+
+{% block page_title %}Attendance{% endblock %}
+{% block page_subtitle %}Daily clock-in & clock-out overview{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Summary strip ── */
+  .att-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .att-stat {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .att-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .att-stat-icon.green  { background: #f0fff4; color: #38a169; }
+  .att-stat-icon.slate  { background: #f7fafc; color: #718096; }
+  .att-stat-icon.blue   { background: #ebf8ff; color: #3182ce; }
+  .att-stat-icon.red    { background: #fff5f5; color: #e53e3e; }
+
+  .att-stat-val {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a365d;
+    line-height: 1;
+  }
+
+  .att-stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 3px;
+  }
+
+  /* ── Controls bar ── */
+  .controls-bar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  /* Date navigator */
+  .date-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .date-nav-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    background: #f7fafc;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 12px;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .date-nav-btn:hover { background: #edf2f7; border-color: #cbd5e0; color: #1a365d; }
+  .date-nav-btn.disabled { opacity: 0.35; pointer-events: none; }
+
+  .date-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a365d;
+    padding: 0 8px;
+    white-space: nowrap;
+  }
+
+  .btn-today {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    background: #f7fafc;
+    color: #4a5568;
+    text-decoration: none;
+    transition: background 0.12s;
+    white-space: nowrap;
+  }
+  .btn-today:hover { background: #edf2f7; color: #1a365d; }
+
+  .controls-divider {
+    width: 1px;
+    height: 24px;
+    background: #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  /* Filters */
+  .filter-select {
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    background: #f7fafc;
+    font-size: 13px;
+    color: #4a5568;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.12s;
+  }
+  .filter-select:focus { border-color: #3182ce; }
+
+  /* Search */
+  .search-wrap {
+    position: relative;
+    margin-left: auto;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #cbd5e0;
+    font-size: 12px;
+    pointer-events: none;
+  }
+
+  .search-input {
+    height: 32px;
+    padding: 0 12px 0 30px;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    background: #f7fafc;
+    font-size: 13px;
+    color: #4a5568;
+    outline: none;
+    width: 200px;
+    transition: border-color 0.12s, width 0.2s;
+  }
+  .search-input:focus { border-color: #3182ce; width: 240px; }
+  .search-input::placeholder { color: #cbd5e0; }
+
+  /* ── Table card ── */
+  .table-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .att-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .att-table thead tr {
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .att-table th {
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .att-table td {
+    padding: 13px 16px;
+    font-size: 13px;
+    color: #4a5568;
+    border-bottom: 1px solid #f7fafc;
+    vertical-align: middle;
+  }
+
+  .att-table tbody tr:last-child td { border-bottom: none; }
+  .att-table tbody tr:hover td { background: #f7fafc; }
+
+  /* Employee cell */
+  .emp-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ebf8ff;
+    color: #3182ce;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .emp-name {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .emp-meta {
+    font-size: 11px;
+    color: #a0aec0;
+    margin-top: 1px;
+  }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .status-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .badge-clocked-in  { background: #f0fff4; color: #38a169; }
+  .badge-clocked-in .dot  { background: #38a169; }
+  .badge-clocked-out { background: #f7fafc; color: #718096; }
+  .badge-clocked-out .dot { background: #a0aec0; }
+  .badge-on-leave    { background: #ebf8ff; color: #3182ce; }
+  .badge-on-leave .dot    { background: #3182ce; }
+  .badge-absent      { background: #fff5f5; color: #e53e3e; }
+  .badge-absent .dot      { background: #e53e3e; }
+
+  /* Time value */
+  .time-val {
+    font-size: 13px;
+    color: #2d3748;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .time-null { color: #cbd5e0; }
+
+  /* Hours pill */
+  .hours-pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f7fafc;
+    color: #4a5568;
+    white-space: nowrap;
+  }
+
+  .hours-pill.good { background: #f0fff4; color: #38a169; }
+  .hours-pill.warn { background: #fffbeb; color: #d69e2e; }
+
+  /* Empty state */
+  .empty-state {
+    padding: 48px 20px;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #cbd5e0;
+    margin: 0 auto 14px;
+  }
+
+  .empty-state h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 6px;
+  }
+
+  .empty-state p {
+    font-size: 13px;
+    color: #a0aec0;
+  }
+
+  /* Table footer count */
+  .table-footer {
+    padding: 10px 18px;
+    border-top: 1px solid #f7fafc;
+    font-size: 12px;
+    color: #a0aec0;
+    background: #fafafa;
+    border-radius: 0 0 11px 11px;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .att-summary { grid-template-columns: repeat(2, 1fr); }
+    .col-break, .col-dept { display: none; }
+  }
+
+  @media (max-width: 768px) {
+    .att-summary { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .controls-bar { gap: 8px; }
+    .search-wrap { margin-left: 0; width: 100%; }
+    .search-input { width: 100%; }
+    .search-input:focus { width: 100%; }
+    .col-punch-out, .col-break { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- ── Summary strip ── -->
+  <div class="att-summary">
+
+    <div class="att-stat">
+      <div class="att-stat-icon green"><i class="fas fa-clock"></i></div>
+      <div>
+        <div class="att-stat-val">{{ summary.clocked_in }}</div>
+        <div class="att-stat-label">Clocked In</div>
+      </div>
+    </div>
+
+    <div class="att-stat">
+      <div class="att-stat-icon slate"><i class="fas fa-circle-check"></i></div>
+      <div>
+        <div class="att-stat-val">{{ summary.clocked_out }}</div>
+        <div class="att-stat-label">Clocked Out</div>
+      </div>
+    </div>
+
+    <div class="att-stat">
+      <div class="att-stat-icon blue"><i class="fas fa-umbrella-beach"></i></div>
+      <div>
+        <div class="att-stat-val">{{ summary.on_leave }}</div>
+        <div class="att-stat-label">On Leave</div>
+      </div>
+    </div>
+
+    <div class="att-stat">
+      <div class="att-stat-icon red"><i class="fas fa-user-xmark"></i></div>
+      <div>
+        <div class="att-stat-val">{{ summary.absent }}</div>
+        <div class="att-stat-label">Absent</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Controls bar ── -->
+  <form method="get" id="filterForm">
+    <div class="controls-bar">
+
+      <!-- Date nav -->
+      <div class="date-nav">
+        <a href="?date={{ prev_date|date:'Y-m-d' }}&dept={{ dept_filter }}&status={{ status_filter }}"
+           class="date-nav-btn" title="Previous day">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+        <span class="date-label">{{ selected_date|date:"l, j M Y" }}</span>
+        <a href="{% if can_go_next %}?date={{ next_date|date:'Y-m-d' }}&dept={{ dept_filter }}&status={{ status_filter }}{% else %}#{% endif %}"
+           class="date-nav-btn {% if not can_go_next %}disabled{% endif %}" title="Next day">
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      </div>
+
+      {% if selected_date != today %}
+        <a href="?date={{ today|date:'Y-m-d' }}" class="btn-today">
+          Today
+        </a>
+      {% endif %}
+
+      <div class="controls-divider"></div>
+
+      <!-- Dept filter -->
+      <select name="dept" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+          <option value="{{ dept.name }}" {% if dept_filter == dept.name %}selected{% endif %}>
+            {{ dept.name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <!-- Status filter -->
+      <select name="status" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Statuses</option>
+        <option value="clocked_in"  {% if status_filter == 'clocked_in'  %}selected{% endif %}>Clocked In</option>
+        <option value="clocked_out" {% if status_filter == 'clocked_out' %}selected{% endif %}>Clocked Out</option>
+        <option value="on_leave"    {% if status_filter == 'on_leave'    %}selected{% endif %}>On Leave</option>
+        <option value="absent"      {% if status_filter == 'absent'      %}selected{% endif %}>Absent</option>
+      </select>
+
+      <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+
+      <!-- Search -->
+      <div class="search-wrap">
+        <i class="fas fa-magnifying-glass search-icon"></i>
+        <input
+          type="text"
+          id="tableSearch"
+          class="search-input"
+          placeholder="Search employee…"
+          autocomplete="off">
+      </div>
+
+    </div>
+  </form>
+
+  <!-- ── Table card ── -->
+  <div class="table-card">
+    {% if rows %}
+      <table class="att-table" id="attendanceTable">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th class="col-dept">Department</th>
+            <th>Status</th>
+            <th>Clock In</th>
+            <th class="col-punch-out">Clock Out</th>
+            <th class="col-break">Break</th>
+            <th>Hours Worked</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          {% for row in rows %}
+          <tr data-name="{{ row.employee.full_name|lower }}">
+
+            <!-- Employee -->
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="emp-avatar">
+                  {{ row.employee.user.first_name|first|upper }}{{ row.employee.user.last_name|first|upper }}
+                </div>
+                <div>
+                  <div class="emp-name">{{ row.employee.full_name }}</div>
+                  <div class="emp-meta">{{ row.employee.employee_id }}</div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Department -->
+            <td class="col-dept">
+              {{ row.employee.department.name|default:"—" }}
+            </td>
+
+            <!-- Status -->
+            <td>
+              {% if row.status == 'clocked_in' %}
+                <span class="status-badge badge-clocked-in"><span class="dot"></span>Working</span>
+              {% elif row.status == 'clocked_out' %}
+                <span class="status-badge badge-clocked-out"><span class="dot"></span>Clocked Out</span>
+              {% elif row.status == 'on_leave' %}
+                <span class="status-badge badge-on-leave"><span class="dot"></span>On Leave</span>
+              {% else %}
+                <span class="status-badge badge-absent"><span class="dot"></span>Absent</span>
+              {% endif %}
+            </td>
+
+            <!-- Clock In -->
+            <td>
+              {% if row.punch_in %}
+                <span class="time-val">{{ row.punch_in|date:"H:i" }}</span>
+              {% else %}
+                <span class="time-null">—</span>
+              {% endif %}
+            </td>
+
+            <!-- Clock Out -->
+            <td class="col-punch-out">
+              {% if row.punch_out %}
+                <span class="time-val">{{ row.punch_out|date:"H:i" }}</span>
+              {% elif row.status == 'clocked_in' %}
+                <span style="font-size:11px;color:#38a169;font-weight:600;">In progress</span>
+              {% else %}
+                <span class="time-null">—</span>
+              {% endif %}
+            </td>
+
+            <!-- Break -->
+            <td class="col-break">
+              {% if row.break_h > 0 %}
+                <span class="time-val">{{ row.break_h }}h</span>
+              {% else %}
+                <span class="time-null">—</span>
+              {% endif %}
+            </td>
+
+            <!-- Hours Worked -->
+            <td>
+              {% if row.worked_h >= 8 %}
+                <span class="hours-pill good">{{ row.worked_h }}h</span>
+              {% elif row.worked_h > 0 %}
+                <span class="hours-pill warn">{{ row.worked_h }}h</span>
+              {% else %}
+                <span class="time-null">—</span>
+              {% endif %}
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="table-footer" id="tableFooter">
+        Showing <span id="visibleCount">{{ rows|length }}</span> of {{ rows|length }} employees
+      </div>
+
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-clock"></i></div>
+        <h3>No attendance data</h3>
+        <p>
+          {% if dept_filter or status_filter %}
+            No employees match the current filters.
+            <a href="?date={{ selected_date|date:'Y-m-d' }}" style="color:#3182ce;">Clear filters</a>
+          {% else %}
+            No attendance records found for {{ selected_date|date:"j M Y" }}.
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Live search filter
+  const searchInput  = document.getElementById('tableSearch');
+  const tableBody    = document.getElementById('tableBody');
+  const visibleCount = document.getElementById('visibleCount');
+
+  if (searchInput && tableBody) {
+    searchInput.addEventListener('input', function () {
+      const q = this.value.trim().toLowerCase();
+      const rows = tableBody.querySelectorAll('tr');
+      let visible = 0;
+
+      rows.forEach(row => {
+        const name = row.dataset.name || '';
+        const show = !q || name.includes(q);
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+
+      if (visibleCount) visibleCount.textContent = visible;
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,651 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}Leave Requests — Management Portal{% endblock %}
+{% block nav_leave %}active{% endblock %}
+{% block bnav_leave %}active{% endblock %}
+
+{% block page_title %}Leave Requests{% endblock %}
+{% block page_subtitle %}Review and action employee leave submissions{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'manager_portal:leave_balances' %}"
+     style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:500;color:#4a5568;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.04);transition:box-shadow 0.15s;">
+    <i class="fas fa-chart-pie" style="font-size:12px;color:#a0aec0;"></i> Leave Balances
+  </a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Status tabs ── */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 16px;
+    width: fit-content;
+  }
+
+  .tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #718096;
+    text-decoration: none;
+    transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { background: #edf2f7; color: #2d3748; }
+
+  .tab-btn.active {
+    background: #ffffff;
+    color: #1a365d;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .tab-count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 20px;
+    background: #e2e8f0;
+    color: #718096;
+  }
+
+  .tab-btn.active .tab-count {
+    background: #ebf8ff;
+    color: #3182ce;
+  }
+
+  .tab-btn.active .tab-count.orange {
+    background: #fffbeb;
+    color: #d69e2e;
+  }
+
+  /* ── Filters row ── */
+  .filters-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .filter-select {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 13px;
+    color: #4a5568;
+    outline: none;
+    cursor: pointer;
+  }
+  .filter-select:focus { border-color: #3182ce; }
+
+  .search-wrap { position: relative; margin-left: auto; }
+  .search-icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: #cbd5e0; font-size: 12px; pointer-events: none;
+  }
+  .search-input {
+    height: 34px; padding: 0 12px 0 30px;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    background: #ffffff; font-size: 13px; color: #4a5568;
+    outline: none; width: 220px; transition: border-color 0.12s, width 0.2s;
+  }
+  .search-input:focus { border-color: #3182ce; width: 260px; }
+  .search-input::placeholder { color: #cbd5e0; }
+
+  /* ── Cards grid ── */
+  .leave-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+  }
+
+  .leave-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: box-shadow 0.15s;
+  }
+  .leave-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+  /* card top strip — coloured by type */
+  .leave-card-strip {
+    height: 3px;
+  }
+  .strip-annual    { background: #3182ce; }
+  .strip-sick      { background: #e53e3e; }
+  .strip-emergency { background: #d69e2e; }
+  .strip-unpaid    { background: #718096; }
+
+  .leave-card-body { padding: 16px 18px; }
+
+  /* employee row */
+  .lc-emp {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 14px;
+  }
+
+  .lc-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ebf8ff;
+    color: #3182ce;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .lc-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a365d;
+  }
+
+  .lc-dept {
+    font-size: 11px;
+    color: #a0aec0;
+    margin-top: 1px;
+  }
+
+  .lc-status { margin-left: auto; }
+
+  /* info rows */
+  .lc-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    margin-bottom: 14px;
+  }
+
+  .lc-field-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+
+  .lc-field-val {
+    font-size: 13px;
+    font-weight: 500;
+    color: #2d3748;
+  }
+
+  /* reason */
+  .lc-reason {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #718096;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    border: 1px solid #edf2f7;
+  }
+
+  /* review notes (approved/rejected) */
+  .lc-review-note {
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .lc-review-note.approved { background: #f0fff4; border: 1px solid #c6f6d5; color: #276749; }
+  .lc-review-note.rejected { background: #fff5f5; border: 1px solid #fed7d7; color: #9b2335; }
+
+  /* actions */
+  .lc-actions {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid #f7fafc;
+    padding-top: 14px;
+  }
+
+  .btn-approve, .btn-reject {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: pointer;
+    text-align: center;
+    transition: opacity 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-approve { background: #f0fff4; color: #38a169; border-color: #c6f6d5; }
+  .btn-approve:hover { background: #c6f6d5; }
+  .btn-reject  { background: #fff5f5; color: #e53e3e; border-color: #fed7d7; }
+  .btn-reject:hover  { background: #fed7d7; }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-pending  { background: #fffbeb; color: #d69e2e; }
+  .badge-approved { background: #f0fff4; color: #38a169; }
+  .badge-rejected { background: #fff5f5; color: #e53e3e; }
+
+  /* Leave type pill */
+  .type-pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .type-annual    { background: #ebf8ff; color: #3182ce; }
+  .type-sick      { background: #fff5f5; color: #e53e3e; }
+  .type-emergency { background: #fffbeb; color: #d69e2e; }
+  .type-unpaid    { background: #f7fafc; color: #718096; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal-box {
+    background: #ffffff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+
+  .modal-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a365d;
+  }
+
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    background: #f7fafc;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: #a0aec0;
+    transition: background 0.12s;
+  }
+  .modal-close:hover { background: #edf2f7; color: #4a5568; }
+
+  .modal-body { padding: 18px 20px; }
+
+  .modal-info {
+    background: #f7fafc;
+    border-radius: 9px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+  }
+
+  .modal-info strong { color: #1a365d; }
+
+  .m-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .m-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #2d3748;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    background: #f7fafc;
+    transition: border-color 0.15s;
+  }
+  .m-textarea:focus { border-color: #3182ce; background: #fff; }
+
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .m-btn {
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .m-btn-cancel { background: #f7fafc; color: #718096; border-color: #e2e8f0; }
+  .m-btn-cancel:hover { background: #edf2f7; }
+  .m-btn-approve { background: #38a169; color: #fff; border-color: #38a169; }
+  .m-btn-approve:hover { background: #2f855a; }
+  .m-btn-reject  { background: #e53e3e; color: #fff; border-color: #e53e3e; }
+  .m-btn-reject:hover  { background: #c53030; }
+
+  /* Empty state */
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+  }
+  .empty-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: #cbd5e0;
+    margin: 0 auto 14px;
+  }
+  .empty-state h3 { font-size: 15px; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+  .empty-state p  { font-size: 13px; color: #a0aec0; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .leave-grid { grid-template-columns: 1fr; }
+    .tab-bar { width: 100%; overflow-x: auto; }
+    .filters-row { gap: 8px; }
+    .search-wrap { margin-left: 0; width: 100%; }
+    .search-input { width: 100%; }
+    .search-input:focus { width: 100%; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- ── Status tabs ── -->
+  <div class="tab-bar">
+    <a href="?status=pending&type={{ type_filter }}&q={{ search_q }}"
+       class="tab-btn {% if status_filter == 'pending' %}active{% endif %}">
+      Pending
+      <span class="tab-count orange">{{ pending_count }}</span>
+    </a>
+    <a href="?status=approved&type={{ type_filter }}&q={{ search_q }}"
+       class="tab-btn {% if status_filter == 'approved' %}active{% endif %}">
+      Approved
+      <span class="tab-count">{{ approved_count }}</span>
+    </a>
+    <a href="?status=rejected&type={{ type_filter }}&q={{ search_q }}"
+       class="tab-btn {% if status_filter == 'rejected' %}active{% endif %}">
+      Rejected
+      <span class="tab-count">{{ rejected_count }}</span>
+    </a>
+    <a href="?status=&type={{ type_filter }}&q={{ search_q }}"
+       class="tab-btn {% if not status_filter %}active{% endif %}">
+      All
+    </a>
+  </div>
+
+  <!-- ── Filters ── -->
+  <div class="filters-row">
+    <form method="get" style="display:contents;">
+      <input type="hidden" name="status" value="{{ status_filter }}">
+
+      <select name="type" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Types</option>
+        <option value="annual"    {% if type_filter == 'annual'    %}selected{% endif %}>Annual</option>
+        <option value="sick"      {% if type_filter == 'sick'      %}selected{% endif %}>Sick</option>
+        <option value="emergency" {% if type_filter == 'emergency' %}selected{% endif %}>Emergency</option>
+        <option value="unpaid"    {% if type_filter == 'unpaid'    %}selected{% endif %}>Unpaid</option>
+      </select>
+
+      <div class="search-wrap">
+        <i class="fas fa-magnifying-glass search-icon"></i>
+        <input type="text" name="q" value="{{ search_q }}"
+          class="search-input" placeholder="Search employee…"
+          autocomplete="off">
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Cards ── -->
+  {% if requests %}
+    <div class="leave-grid" id="leaveGrid">
+      {% for req in requests %}
+      <div class="leave-card" data-name="{{ req.employee.full_name|lower }}">
+
+        <div class="leave-card-strip strip-{{ req.leave_type }}"></div>
+
+        <div class="leave-card-body">
+
+          <!-- Employee row -->
+          <div class="lc-emp">
+            <div class="lc-avatar">
+              {{ req.employee.user.first_name|first|upper }}{{ req.employee.user.last_name|first|upper }}
+            </div>
+            <div>
+              <div class="lc-name">{{ req.employee.full_name }}</div>
+              <div class="lc-dept">{{ req.employee.department.name|default:"No Department" }}</div>
+            </div>
+            <div class="lc-status">
+              <span class="status-badge badge-{{ req.status }}">{{ req.get_status_display }}</span>
+            </div>
+          </div>
+
+          <!-- Info grid -->
+          <div class="lc-info">
+            <div>
+              <div class="lc-field-label">Leave Type</div>
+              <div class="lc-field-val">
+                <span class="type-pill type-{{ req.leave_type }}">{{ req.get_leave_type_display }}</span>
+              </div>
+            </div>
+            <div>
+              <div class="lc-field-label">Duration</div>
+              <div class="lc-field-val">
+                {{ req.days_requested }} day{{ req.days_requested|pluralize }}
+              </div>
+            </div>
+            <div>
+              <div class="lc-field-label">From</div>
+              <div class="lc-field-val">{{ req.start_date|date:"j M Y" }}</div>
+            </div>
+            <div>
+              <div class="lc-field-label">To</div>
+              <div class="lc-field-val">{{ req.end_date|date:"j M Y" }}</div>
+            </div>
+          </div>
+
+          <!-- Reason -->
+          {% if req.reason %}
+            <div class="lc-reason">
+              <span style="color:#a0aec0;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">Reason — </span>
+              {{ req.reason }}
+            </div>
+          {% endif %}
+
+          <!-- Review note (approved/rejected) -->
+          {% if req.review_notes and req.status != 'pending' %}
+            <div class="lc-review-note {{ req.status }}">
+              <span style="font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">
+                {% if req.status == 'approved' %}✓ Approved{% else %}✕ Rejected{% endif %}
+                {% if req.reviewed_by %} by {{ req.reviewed_by.full_name }}{% endif %}
+              </span><br>
+              {{ req.review_notes }}
+            </div>
+          {% endif %}
+
+          <!-- Actions (pending only) -->
+          {% if req.status == 'pending' %}
+            <div class="lc-actions">
+              <button type="button"
+                class="btn-approve"
+                onclick="openModal('approve', {{ req.pk }}, '{{ req.employee.full_name }}', '{{ req.get_leave_type_display }}', '{{ req.days_requested }}')">
+                <i class="fas fa-check"></i> Approve
+              </button>
+              <button type="button"
+                class="btn-reject"
+                onclick="openModal('reject', {{ req.pk }}, '{{ req.employee.full_name }}', '{{ req.get_leave_type_display }}', '{{ req.days_requested }}')">
+                <i class="fas fa-xmark"></i> Reject
+              </button>
+            </div>
+          {% else %}
+            <div style="padding-top:14px;border-top:1px solid #f7fafc;font-size:11px;color:#a0aec0;">
+              Submitted {{ req.created_at|date:"j M Y" }}
+              {% if req.reviewed_by %} · Reviewed by {{ req.reviewed_by.full_name }}{% endif %}
+            </div>
+          {% endif %}
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fas fa-calendar-xmark"></i></div>
+      <h3>No leave requests</h3>
+      <p>
+        {% if status_filter == 'pending' %}
+          There are no pending leave requests right now.
+        {% else %}
+          No requests match the current filters.
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+
+<!-- Approve modal -->
+<div class="modal-overlay" id="approveModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-check" style="color:#38a169;margin-right:8px;"></i>Approve Leave</span>
+      <button class="modal-close" onclick="closeModal('approveModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <form method="post" id="approveForm">
+      {% csrf_token %}
+      <div class="modal-body">
+        <div class="modal-info" id="approveInfo"></div>
+        <label class="m-label">Note (optional)</label>
+        <textarea name="notes" class="m-textarea" placeholder="Add a note for the employee…"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="m-btn m-btn-cancel" onclick="closeModal('approveModal')">Cancel</button>
+        <button type="submit" class="m-btn m-btn-approve"><i class="fas fa-check"></i> Confirm Approve</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Reject modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-xmark" style="color:#e53e3e;margin-right:8px;"></i>Reject Leave</span>
+      <button class="modal-close" onclick="closeModal('rejectModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <form method="post" id="rejectForm">
+      {% csrf_token %}
+      <div class="modal-body">
+        <div class="modal-info" id="rejectInfo"></div>
+        <label class="m-label">Reason for rejection <span style="color:#e53e3e;">*</span></label>
+        <textarea name="notes" class="m-textarea" placeholder="Explain why the leave is being rejected…" required></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="m-btn m-btn-cancel" onclick="closeModal('rejectModal')">Cancel</button>
+        <button type="submit" class="m-btn m-btn-reject"><i class="fas fa-xmark"></i> Confirm Reject</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const approveBase = "{% url 'manager_portal:leave_approve' 0 %}".replace('0/', '{pk}/');
+  const rejectBase  = "{% url 'manager_portal:leave_reject'  0 %}".replace('0/', '{pk}/');
+
+  function openModal(action, pk, name, type, days) {
+    const info = `<strong>${name}</strong> · ${type} · ${days} day${days == 1 ? '' : 's'}`;
+    if (action === 'approve') {
+      document.getElementById('approveInfo').innerHTML = info;
+      document.getElementById('approveForm').action = approveBase.replace('{pk}', pk);
+      document.getElementById('approveModal').classList.add('open');
+    } else {
+      document.getElementById('rejectInfo').innerHTML = info;
+      document.getElementById('rejectForm').action = rejectBase.replace('{pk}', pk);
+      document.getElementById('rejectModal').classList.add('open');
+    }
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  // Close on backdrop click
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target === this) closeModal(this.id);
+    });
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.open').forEach(el => closeModal(el.id));
+    }
+  });
+</script>
+{% endblock %}

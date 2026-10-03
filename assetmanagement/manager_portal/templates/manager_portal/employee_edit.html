@@ -1,0 +1,232 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}Edit {{ emp.full_name }} — Management Portal{% endblock %}
+{% block nav_employees %}active{% endblock %}
+{% block bnav_employees %}active{% endblock %}
+
+{% block page_title %}Edit Employee{% endblock %}
+{% block page_subtitle %}{{ emp.full_name }} · {{ emp.employee_id }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'manager_portal:employee_detail' emp.pk %}"
+     style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:500;color:#4a5568;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+    <i class="fas fa-arrow-left" style="font-size:11px;color:#a0aec0;"></i> Back
+  </a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-card {
+    background: #ffffff; border: 1px solid #e2e8f0;
+    border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    max-width: 720px;
+  }
+
+  .form-section { padding: 20px 24px; border-bottom: 1px solid #edf2f7; }
+  .form-section:last-of-type { border-bottom: none; }
+
+  .form-section-title {
+    font-size: 12px; font-weight: 700; color: #a0aec0;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+
+  .f-row   { display: grid; grid-template-columns: 1fr 1fr;       gap: 14px; }
+  .f-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr;   gap: 14px; }
+
+  .f-label {
+    display: block; font-size: 11px; font-weight: 700;
+    color: #4a5568; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .f-required { color: #e53e3e; margin-left: 2px; }
+
+  .f-input, .f-select {
+    width: 100%; background: #f7fafc;
+    border: 1.5px solid #e2e8f0; border-radius: 9px;
+    padding: 10px 14px; font-size: 14px; color: #1a202c;
+    outline: none; font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  }
+  .f-input:focus, .f-select:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49,130,206,0.1);
+    background: #fff;
+  }
+  .f-input::placeholder { color: #cbd5e0; }
+  .f-select { cursor: pointer; }
+
+  .form-error {
+    background: #fff5f5; border: 1.5px solid #fed7d7;
+    border-radius: 9px; padding: 12px 16px;
+    margin: 16px 24px 0; font-size: 13px; color: #c53030;
+  }
+  .form-error ul { margin: 6px 0 0 16px; }
+
+  .form-actions {
+    padding: 16px 24px; border-top: 1px solid #e2e8f0;
+    background: #f7fafc; border-radius: 0 0 12px 12px;
+    display: flex; gap: 10px; align-items: center;
+  }
+
+  .btn-submit {
+    padding: 11px 28px; background: #1a365d; border: none;
+    border-radius: 9px; font-size: 14px; font-weight: 600; color: #fff;
+    cursor: pointer; transition: background 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-submit:hover { background: #2c4a7c; }
+
+  .btn-cancel {
+    padding: 11px 20px; background: #fff;
+    border: 1px solid #e2e8f0; border-radius: 9px;
+    font-size: 14px; font-weight: 500; color: #718096;
+    text-decoration: none; cursor: pointer; transition: background 0.12s;
+  }
+  .btn-cancel:hover { background: #f7fafc; }
+
+  .readonly-note {
+    font-size: 12px; color: #a0aec0; margin-top: 5px;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  @media (max-width: 640px) {
+    .f-row, .f-row-3 { grid-template-columns: 1fr; }
+    .form-card { max-width: 100%; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-card">
+
+  {% if errors %}
+    <div class="form-error">
+      <strong><i class="fas fa-circle-exclamation"></i> Please fix the following:</strong>
+      <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <!-- Personal info -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="fas fa-user"></i> Personal Information</div>
+      <div class="f-row" style="margin-bottom:14px;">
+        <div>
+          <label class="f-label">First Name <span class="f-required">*</span></label>
+          <input type="text" name="first_name" class="f-input"
+            value="{{ post.first_name|default:emp.user.first_name }}" required>
+        </div>
+        <div>
+          <label class="f-label">Last Name <span class="f-required">*</span></label>
+          <input type="text" name="last_name" class="f-input"
+            value="{{ post.last_name|default:emp.user.last_name }}" required>
+        </div>
+      </div>
+      <div class="f-row">
+        <div>
+          <label class="f-label">Phone</label>
+          <input type="text" name="phone" class="f-input"
+            value="{{ post.phone|default:emp.phone }}">
+        </div>
+        <div>
+          <label class="f-label">Email</label>
+          <input type="email" name="email" class="f-input"
+            value="{{ post.email|default:emp.user.email }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- Username (read only) -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="fas fa-key"></i> Login</div>
+      <div style="max-width:320px;">
+        <label class="f-label">Username</label>
+        <input type="text" class="f-input" value="{{ emp.user.username }}" disabled
+          style="background:#f7fafc;color:#a0aec0;cursor:not-allowed;">
+        <div class="readonly-note">
+          <i class="fas fa-lock" style="font-size:10px;"></i>
+          Username cannot be changed here.
+        </div>
+      </div>
+    </div>
+
+    <!-- Employment info -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="fas fa-briefcase"></i> Employment Details</div>
+      <div class="f-row" style="margin-bottom:14px;">
+        <div>
+          <label class="f-label">Position / Job Title <span class="f-required">*</span></label>
+          <input type="text" name="position" class="f-input"
+            value="{{ post.position|default:emp.position }}" required>
+        </div>
+        <div>
+          <label class="f-label">Department</label>
+          <select name="department" class="f-select">
+            <option value="">— No Department —</option>
+            {% for dept in departments %}
+              <option value="{{ dept.pk }}"
+                {% if post.department == dept.pk|stringformat:"s" %}selected
+                {% elif not post and emp.department and emp.department.pk == dept.pk %}selected{% endif %}>
+                {{ dept.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="f-row-3" style="margin-bottom:14px;">
+        <div>
+          <label class="f-label">Role</label>
+          <select name="role" class="f-select">
+            {% for val, label in role_choices %}
+              <option value="{{ val }}"
+                {% if post.role == val %}selected
+                {% elif not post and emp.role == val %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="f-label">Employment Type</label>
+          <select name="employment_type" class="f-select">
+            {% for val, label in type_choices %}
+              <option value="{{ val }}"
+                {% if post.employment_type == val %}selected
+                {% elif not post and emp.employment_type == val %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="f-label">Status</label>
+          <select name="employment_status" class="f-select">
+            {% for val, label in status_choices %}
+              <option value="{{ val }}"
+                {% if post.employment_status == val %}selected
+                {% elif not post and emp.employment_status == val %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="max-width:220px;">
+        <label class="f-label">Monthly Salary (KES)</label>
+        <input type="number" name="salary" class="f-input"
+          value="{{ post.salary|default:emp.salary|default:'' }}" min="0" step="500">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-submit">
+        <i class="fas fa-floppy-disk"></i> Save Changes
+      </button>
+      <a href="{% url 'manager_portal:employee_detail' emp.pk %}" class="btn-cancel">Cancel</a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

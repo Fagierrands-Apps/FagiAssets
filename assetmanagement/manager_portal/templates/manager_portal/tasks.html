@@ -1,0 +1,507 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}Tasks — Management Portal{% endblock %}
+{% block nav_tasks %}active{% endblock %}
+{% block bnav_tasks %}active{% endblock %}
+
+{% block page_title %}Tasks{% endblock %}
+{% block page_subtitle %}Assign and track team tasks{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'manager_portal:task_assign' %}"
+     style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#1a365d;border:1px solid #1a365d;border-radius:8px;font-size:13px;font-weight:600;color:#fff;text-decoration:none;transition:background 0.15s;">
+    <i class="fas fa-plus" style="font-size:11px;"></i> Assign Task
+  </a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Summary strip ── */
+  .task-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .task-stat {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .task-stat-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .task-stat-icon.slate  { background: #f7fafc; color: #718096; }
+  .task-stat-icon.blue   { background: #ebf8ff; color: #3182ce; }
+  .task-stat-icon.green  { background: #f0fff4; color: #38a169; }
+  .task-stat-icon.red    { background: #fff5f5; color: #e53e3e; }
+
+  .task-stat-val   { font-size: 26px; font-weight: 800; color: #1a365d; line-height: 1; }
+  .task-stat-label { font-size: 11px; font-weight: 600; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+
+  /* ── Tabs + filters ── */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 4px;
+  }
+
+  .tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #718096;
+    text-decoration: none;
+    transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { background: #edf2f7; color: #2d3748; }
+  .tab-btn.active {
+    background: #ffffff;
+    color: #1a365d;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .tab-count {
+    font-size: 11px; font-weight: 700;
+    padding: 1px 6px; border-radius: 20px;
+    background: #e2e8f0; color: #718096;
+  }
+  .tab-btn.active .tab-count { background: #ebf8ff; color: #3182ce; }
+  .tab-btn.active .tab-count.red { background: #fff5f5; color: #e53e3e; }
+
+  .filter-select {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 13px;
+    color: #4a5568;
+    outline: none;
+    cursor: pointer;
+  }
+  .filter-select:focus { border-color: #3182ce; }
+
+  .search-wrap { position: relative; margin-left: auto; }
+  .search-icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: #cbd5e0; font-size: 12px; pointer-events: none;
+  }
+  .search-input {
+    height: 34px; padding: 0 12px 0 30px;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    background: #ffffff; font-size: 13px; color: #4a5568;
+    outline: none; width: 200px; transition: border-color 0.12s, width 0.2s;
+  }
+  .search-input:focus { border-color: #3182ce; width: 240px; }
+  .search-input::placeholder { color: #cbd5e0; }
+
+  /* ── Task cards ── */
+  .tasks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+  }
+
+  .task-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: box-shadow 0.15s;
+  }
+  .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .task-card.overdue { border-color: #fed7d7; }
+
+  .task-card-strip { height: 3px; }
+  .strip-urgent   { background: #e53e3e; }
+  .strip-high     { background: #d69e2e; }
+  .strip-medium   { background: #3182ce; }
+  .strip-low      { background: #a0aec0; }
+
+  .task-card-body { padding: 16px 18px; }
+
+  /* Header */
+  .tc-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .tc-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a365d;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .tc-priority {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+  }
+  .prio-urgent { background: #fff5f5; color: #e53e3e; }
+  .prio-high   { background: #fffbeb; color: #d69e2e; }
+  .prio-medium { background: #ebf8ff; color: #3182ce; }
+  .prio-low    { background: #f7fafc; color: #718096; }
+
+  /* Description */
+  .tc-desc {
+    font-size: 12px;
+    color: #718096;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Assignee */
+  .tc-assignee {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .tc-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #ebf8ff; color: #3182ce;
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .tc-assignee-name { font-size: 12px; font-weight: 600; color: #2d3748; }
+  .tc-assignee-dept { font-size: 11px; color: #a0aec0; }
+
+  /* Footer */
+  .tc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid #f7fafc;
+  }
+
+  .tc-due {
+    font-size: 12px;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .tc-due.overdue { color: #e53e3e; font-weight: 600; }
+  .tc-due.due-soon { color: #d69e2e; font-weight: 600; }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-pending     { background: #f7fafc;  color: #718096; }
+  .badge-in_progress { background: #ebf8ff;  color: #3182ce; }
+  .badge-completed   { background: #f0fff4;  color: #38a169; }
+  .badge-cancelled   { background: #fff5f5;  color: #e53e3e; }
+
+  /* Status update dropdown */
+  .tc-status-form { display: flex; align-items: center; gap: 6px; }
+
+  .status-select {
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f7fafc;
+    font-size: 12px;
+    color: #4a5568;
+    outline: none;
+    cursor: pointer;
+  }
+  .status-select:focus { border-color: #3182ce; }
+
+  .btn-update {
+    height: 28px;
+    padding: 0 12px;
+    background: #1a365d;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .btn-update:hover { background: #2c4a7c; }
+
+  /* Overdue banner */
+  .overdue-banner {
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 12px;
+    color: #e53e3e;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Empty state */
+  .empty-state { padding: 60px 20px; text-align: center; }
+  .empty-icon {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: #f7fafc; border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: #cbd5e0; margin: 0 auto 14px;
+  }
+  .empty-state h3 { font-size: 15px; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+  .empty-state p  { font-size: 13px; color: #a0aec0; }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .task-summary { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .task-summary  { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .tasks-grid    { grid-template-columns: 1fr; }
+    .controls-row  { gap: 8px; }
+    .search-wrap   { margin-left: 0; width: 100%; }
+    .search-input  { width: 100%; }
+    .search-input:focus { width: 100%; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- ── Summary ── -->
+  <div class="task-summary">
+    <div class="task-stat">
+      <div class="task-stat-icon slate"><i class="fas fa-list-check"></i></div>
+      <div>
+        <div class="task-stat-val">{{ all_count }}</div>
+        <div class="task-stat-label">Total Tasks</div>
+      </div>
+    </div>
+    <div class="task-stat">
+      <div class="task-stat-icon blue"><i class="fas fa-spinner"></i></div>
+      <div>
+        <div class="task-stat-val">{{ active_count }}</div>
+        <div class="task-stat-label">In Progress</div>
+      </div>
+    </div>
+    <div class="task-stat">
+      <div class="task-stat-icon green"><i class="fas fa-circle-check"></i></div>
+      <div>
+        <div class="task-stat-val">{{ completed_count }}</div>
+        <div class="task-stat-label">Completed</div>
+      </div>
+    </div>
+    <div class="task-stat">
+      <div class="task-stat-icon red"><i class="fas fa-triangle-exclamation"></i></div>
+      <div>
+        <div class="task-stat-val">{{ overdue_count }}</div>
+        <div class="task-stat-label">Overdue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Controls ── -->
+  <div class="controls-row">
+    <div class="tab-bar">
+      <a href="?status=&priority={{ priority_filter }}&q={{ search_q }}"
+         class="tab-btn {% if not status_filter %}active{% endif %}">
+        All <span class="tab-count">{{ all_count }}</span>
+      </a>
+      <a href="?status=pending&priority={{ priority_filter }}&q={{ search_q }}"
+         class="tab-btn {% if status_filter == 'pending' %}active{% endif %}">
+        Pending <span class="tab-count">{{ pending_count }}</span>
+      </a>
+      <a href="?status=in_progress&priority={{ priority_filter }}&q={{ search_q }}"
+         class="tab-btn {% if status_filter == 'in_progress' %}active{% endif %}">
+        Active <span class="tab-count">{{ active_count }}</span>
+      </a>
+      <a href="?status=completed&priority={{ priority_filter }}&q={{ search_q }}"
+         class="tab-btn {% if status_filter == 'completed' %}active{% endif %}">
+        Done <span class="tab-count">{{ completed_count }}</span>
+      </a>
+    </div>
+
+    <form method="get" style="display:contents;">
+      <input type="hidden" name="status" value="{{ status_filter }}">
+      <input type="hidden" name="q"      value="{{ search_q }}">
+      <select name="priority" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Priorities</option>
+        <option value="urgent" {% if priority_filter == 'urgent' %}selected{% endif %}>Urgent</option>
+        <option value="high"   {% if priority_filter == 'high'   %}selected{% endif %}>High</option>
+        <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+        <option value="low"    {% if priority_filter == 'low'    %}selected{% endif %}>Low</option>
+      </select>
+    </form>
+
+    <div class="search-wrap">
+      <i class="fas fa-magnifying-glass search-icon"></i>
+      <input type="text" id="taskSearch" class="search-input"
+        placeholder="Search tasks or employee…" autocomplete="off">
+    </div>
+  </div>
+
+  <!-- ── Cards ── -->
+  {% if tasks %}
+    <div class="tasks-grid" id="tasksGrid">
+      {% for task in tasks %}
+      <div class="task-card {% if task.is_overdue %}overdue{% endif %}"
+           data-search="{{ task.title|lower }} {{ task.assigned_to.full_name|lower }}">
+
+        <div class="task-card-strip strip-{{ task.priority }}"></div>
+
+        <div class="task-card-body">
+
+          <!-- Header -->
+          <div class="tc-header">
+            <div class="tc-title">{{ task.title }}</div>
+            <span class="tc-priority prio-{{ task.priority }}">{{ task.get_priority_display }}</span>
+          </div>
+
+          <!-- Overdue banner -->
+          {% if task.is_overdue %}
+            <div class="overdue-banner">
+              <i class="fas fa-triangle-exclamation"></i>
+              Overdue since {{ task.due_date|date:"j M Y" }}
+            </div>
+          {% endif %}
+
+          <!-- Description -->
+          {% if task.description %}
+            <div class="tc-desc">{{ task.description }}</div>
+          {% endif %}
+
+          <!-- Assignee -->
+          <div class="tc-assignee">
+            <div class="tc-avatar">
+              {{ task.assigned_to.user.first_name|first|upper }}{{ task.assigned_to.user.last_name|first|upper }}
+            </div>
+            <div>
+              <div class="tc-assignee-name">{{ task.assigned_to.full_name }}</div>
+              <div class="tc-assignee-dept">{{ task.assigned_to.department.name|default:"No Dept" }}</div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="tc-footer">
+            <!-- Due date -->
+            <div class="tc-due {% if task.is_overdue %}overdue{% endif %}">
+              <i class="fas fa-calendar{% if task.is_overdue %}-xmark{% else %}-days{% endif %}"></i>
+              {% if task.due_date %}
+                {{ task.due_date|date:"j M Y, H:i" }}
+              {% else %}
+                No due date
+              {% endif %}
+            </div>
+
+            <!-- Status / update -->
+            {% if task.status != 'completed' and task.status != 'cancelled' %}
+              <form method="post" action="{% url 'manager_portal:task_update' task.pk %}" class="tc-status-form">
+                {% csrf_token %}
+                <select name="status" class="status-select">
+                  <option value="pending"     {% if task.status == 'pending'     %}selected{% endif %}>Pending</option>
+                  <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <button type="submit" class="btn-update">Save</button>
+              </form>
+            {% else %}
+              <span class="status-badge badge-{{ task.status }}">
+                {% if task.status == 'completed' %}<i class="fas fa-check"></i>{% endif %}
+                {{ task.get_status_display }}
+              </span>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fas fa-list-check"></i></div>
+      <h3>No tasks found</h3>
+      <p>
+        {% if status_filter or priority_filter or search_q %}
+          No tasks match the current filters.
+          <a href="{% url 'manager_portal:tasks' %}" style="color:#3182ce;">Clear filters</a>
+        {% else %}
+          No tasks yet. <a href="{% url 'manager_portal:task_assign' %}" style="color:#3182ce;">Assign the first task.</a>
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const searchInput = document.getElementById('taskSearch');
+  const grid = document.getElementById('tasksGrid');
+
+  if (searchInput && grid) {
+    searchInput.addEventListener('input', function () {
+      const q = this.value.trim().toLowerCase();
+      grid.querySelectorAll('.task-card').forEach(card => {
+        const text = card.dataset.search || '';
+        card.style.display = !q || text.includes(q) ? '' : 'none';
+      });
+    });
+  }
+</script>
+{% endblock %}

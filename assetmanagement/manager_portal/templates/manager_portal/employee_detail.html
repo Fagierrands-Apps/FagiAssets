@@ -1,0 +1,530 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}{{ emp.full_name }} — Management Portal{% endblock %}
+{% block nav_employees %}active{% endblock %}
+{% block bnav_employees %}active{% endblock %}
+
+{% block page_title %}{{ emp.full_name }}{% endblock %}
+{% block page_subtitle %}{{ emp.employee_id }} · {{ emp.position }}{% endblock %}
+
+{% block topbar_actions %}
+  <div style="display:flex;gap:8px;">
+    <a href="{% url 'manager_portal:employee_edit' emp.pk %}"
+       style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:500;color:#4a5568;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+      <i class="fas fa-pen" style="font-size:11px;color:#a0aec0;"></i> Edit
+    </a>
+    <a href="{% url 'manager_portal:employee_list' %}"
+       style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-weight:500;color:#4a5568;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+      <i class="fas fa-arrow-left" style="font-size:11px;color:#a0aec0;"></i> Back
+    </a>
+  </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  /* ── Profile card ── */
+  .profile-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .profile-top {
+    background: #1a365d;
+    padding: 28px 20px 20px;
+    text-align: center;
+  }
+
+  .profile-avatar {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 3px solid rgba(255,255,255,0.3);
+    color: #fff; font-size: 22px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+  }
+
+  .profile-name {
+    font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 3px;
+  }
+
+  .profile-pos {
+    font-size: 12px; color: rgba(255,255,255,0.6);
+  }
+
+  .profile-status {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px; margin-top: 10px;
+  }
+  .ps-clocked_in  { background: rgba(56,161,105,0.25); color: #9ae6b4; }
+  .ps-clocked_out { background: rgba(255,255,255,0.1);  color: rgba(255,255,255,0.5); }
+  .ps-on_leave    { background: rgba(99,179,237,0.25);  color: #90cdf4; }
+  .ps-absent      { background: rgba(252,129,129,0.2);  color: #fc8181; }
+
+  .profile-fields { padding: 16px 18px; }
+
+  .pf-row {
+    display: flex; align-items: flex-start;
+    gap: 10px; padding: 9px 0;
+    border-bottom: 1px solid #f7fafc; font-size: 13px;
+  }
+  .pf-row:last-child { border-bottom: none; }
+
+  .pf-icon { color: #a0aec0; font-size: 12px; width: 16px; flex-shrink: 0; margin-top: 1px; }
+  .pf-label { font-size: 11px; color: #a0aec0; margin-bottom: 1px; }
+  .pf-val   { font-weight: 500; color: #2d3748; }
+
+  /* ── Section card ── */
+  .section-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 16px;
+  }
+
+  .section-header {
+    padding: 13px 18px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex; align-items: center;
+    justify-content: space-between;
+    background: #f7fafc;
+  }
+
+  .section-header-left { display: flex; align-items: center; gap: 10px; }
+
+  .section-header-icon {
+    width: 26px; height: 26px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+  }
+
+  .section-header-title { font-size: 13px; font-weight: 600; color: #1a365d; }
+
+  .section-link {
+    font-size: 12px; color: #3182ce; text-decoration: none;
+    font-weight: 500;
+  }
+  .section-link:hover { color: #2d5a87; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0; border-bottom: 1px solid #e2e8f0;
+  }
+
+  .stat-cell {
+    padding: 16px 18px; text-align: center;
+    border-right: 1px solid #e2e8f0;
+  }
+  .stat-cell:last-child { border-right: none; }
+
+  .stat-cell-val   { font-size: 24px; font-weight: 800; color: #1a365d; }
+  .stat-cell-label { font-size: 11px; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 3px; }
+
+  /* Attendance mini-table */
+  .mini-table { width: 100%; border-collapse: collapse; }
+  .mini-table th {
+    padding: 9px 16px; font-size: 10px; font-weight: 700;
+    color: #a0aec0; text-transform: uppercase; letter-spacing: 0.4px;
+    background: #f7fafc; border-bottom: 1px solid #e2e8f0; text-align: left;
+  }
+  .mini-table td {
+    padding: 10px 16px; font-size: 13px; color: #4a5568;
+    border-bottom: 1px solid #f7fafc; vertical-align: middle;
+  }
+  .mini-table tr:last-child td { border-bottom: none; }
+  .mini-table tr:hover td { background: #f7fafc; }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+  }
+  .badge-clocked-in  { background: #f0fff4; color: #38a169; }
+  .badge-clocked-out { background: #f7fafc; color: #718096; }
+  .badge-pending     { background: #fffbeb; color: #d69e2e; }
+  .badge-approved    { background: #f0fff4; color: #38a169; }
+  .badge-rejected    { background: #fff5f5; color: #e53e3e; }
+  .badge-in_progress { background: #ebf8ff; color: #3182ce; }
+  .badge-completed   { background: #f0fff4; color: #38a169; }
+
+  /* Leave balance bars */
+  .bal-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px; border-bottom: 1px solid #f7fafc;
+  }
+  .bal-row:last-child { border-bottom: none; }
+
+  .bal-label { font-size: 13px; font-weight: 500; color: #2d3748; width: 90px; flex-shrink: 0; }
+  .bal-bar { flex: 1; height: 7px; background: #edf2f7; border-radius: 10px; overflow: hidden; }
+  .bal-fill { height: 100%; border-radius: 10px; }
+  .bal-text { font-size: 13px; font-weight: 600; color: #1a365d; white-space: nowrap; min-width: 60px; text-align: right; }
+
+  /* HR Notes */
+  .note-item {
+    padding: 14px 18px; border-bottom: 1px solid #f7fafc;
+  }
+  .note-item:last-child { border-bottom: none; }
+
+  .note-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+  }
+
+  .note-type-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .note-warning     { background: #fff5f5; color: #e53e3e; }
+  .note-commendation{ background: #f0fff4; color: #38a169; }
+  .note-performance { background: #ebf8ff; color: #3182ce; }
+  .note-disciplinary{ background: #fff5f5; color: #c53030; }
+  .note-role_change { background: #faf5ff; color: #805ad5; }
+  .note-general     { background: #f7fafc; color: #718096; }
+
+  .note-title { font-size: 13px; font-weight: 600; color: #2d3748; }
+  .note-content { font-size: 12px; color: #718096; margin-top: 4px; line-height: 1.5; }
+  .note-meta { font-size: 11px; color: #a0aec0; margin-top: 5px; }
+
+  /* Add note form */
+  .add-note-form { padding: 16px 18px; border-top: 1px solid #e2e8f0; background: #f7fafc; }
+
+  .add-note-grid { display: grid; grid-template-columns: 160px 1fr; gap: 10px; margin-bottom: 10px; }
+
+  .f-input-sm, .f-select-sm, .f-textarea-sm {
+    width: 100%; background: #fff;
+    border: 1.5px solid #e2e8f0; border-radius: 8px;
+    padding: 8px 12px; font-size: 13px; color: #1a202c;
+    outline: none; font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  .f-input-sm:focus, .f-select-sm:focus, .f-textarea-sm:focus { border-color: #3182ce; }
+  .f-input-sm::placeholder, .f-textarea-sm::placeholder { color: #cbd5e0; }
+  .f-select-sm { cursor: pointer; }
+  .f-textarea-sm { resize: vertical; min-height: 70px; }
+
+  .btn-add-note {
+    padding: 8px 18px; background: #1a365d; border: none;
+    border-radius: 8px; font-size: 13px; font-weight: 600; color: #fff;
+    cursor: pointer; transition: background 0.12s;
+  }
+  .btn-add-note:hover { background: #2c4a7c; }
+
+  /* Empty */
+  .empty-mini { padding: 20px 18px; text-align: center; font-size: 13px; color: #cbd5e0; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .detail-layout { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-layout">
+
+  <!-- ── Left: Profile card ── -->
+  <div>
+    <div class="profile-card">
+      <div class="profile-top">
+        <div class="profile-avatar">
+          {{ emp.user.first_name|first|upper }}{{ emp.user.last_name|first|upper }}
+        </div>
+        <div class="profile-name">{{ emp.full_name }}</div>
+        <div class="profile-pos">{{ emp.position }}</div>
+        <div>
+          <span class="profile-status ps-{{ current_status }}">
+            {% if current_status == 'clocked_in' %}● Working
+            {% elif current_status == 'clocked_out' %}● Clocked Out
+            {% elif current_status == 'on_leave' %}● On Leave
+            {% else %}● Absent{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="profile-fields">
+        <div class="pf-row">
+          <i class="fas fa-id-badge pf-icon"></i>
+          <div>
+            <div class="pf-label">Employee ID</div>
+            <div class="pf-val">{{ emp.employee_id }}</div>
+          </div>
+        </div>
+        <div class="pf-row">
+          <i class="fas fa-building pf-icon"></i>
+          <div>
+            <div class="pf-label">Department</div>
+            <div class="pf-val">{{ emp.department.name|default:"No Department" }}</div>
+          </div>
+        </div>
+        <div class="pf-row">
+          <i class="fas fa-user-tag pf-icon"></i>
+          <div>
+            <div class="pf-label">Role</div>
+            <div class="pf-val">{{ emp.get_role_display }}</div>
+          </div>
+        </div>
+        <div class="pf-row">
+          <i class="fas fa-briefcase pf-icon"></i>
+          <div>
+            <div class="pf-label">Employment Type</div>
+            <div class="pf-val">{{ emp.get_employment_type_display }}</div>
+          </div>
+        </div>
+        <div class="pf-row">
+          <i class="fas fa-calendar pf-icon"></i>
+          <div>
+            <div class="pf-label">Hire Date</div>
+            <div class="pf-val">{{ emp.hire_date|date:"j M Y" }}</div>
+          </div>
+        </div>
+        {% if emp.phone %}
+        <div class="pf-row">
+          <i class="fas fa-phone pf-icon"></i>
+          <div>
+            <div class="pf-label">Phone</div>
+            <div class="pf-val">{{ emp.phone }}</div>
+          </div>
+        </div>
+        {% endif %}
+        {% if emp.user.email %}
+        <div class="pf-row">
+          <i class="fas fa-envelope pf-icon"></i>
+          <div>
+            <div class="pf-label">Email</div>
+            <div class="pf-val" style="word-break:break-word;">{{ emp.user.email }}</div>
+          </div>
+        </div>
+        {% endif %}
+        {% if emp.salary %}
+        <div class="pf-row">
+          <i class="fas fa-money-bill pf-icon"></i>
+          <div>
+            <div class="pf-label">Salary</div>
+            <div class="pf-val">KES {{ emp.salary|floatformat:0 }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Leave balance -->
+    {% if leave_bal %}
+    <div class="section-card" style="margin-top:16px;">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-header-icon" style="background:#f0fff4;">
+            <i class="fas fa-umbrella-beach" style="color:#38a169;"></i>
+          </div>
+          <span class="section-header-title">Leave Balance {{ leave_bal.year }}</span>
+        </div>
+      </div>
+      <div>
+        <div class="bal-row">
+          <span class="bal-label">Annual</span>
+          <div class="bal-bar">
+            {% widthratio leave_bal.annual_days_used leave_bal.annual_days_total 100 as a_pct %}
+            <div class="bal-fill" style="width:{{ a_pct }}%;background:#48bb78;"></div>
+          </div>
+          <span class="bal-text">{{ leave_bal.annual_days_remaining }} / {{ leave_bal.annual_days_total }}</span>
+        </div>
+        <div class="bal-row">
+          <span class="bal-label">Sick</span>
+          <div class="bal-bar">
+            {% widthratio leave_bal.sick_days_used leave_bal.sick_days_total 100 as s_pct %}
+            <div class="bal-fill" style="width:{{ s_pct }}%;background:#fc8181;"></div>
+          </div>
+          <span class="bal-text">{{ leave_bal.sick_days_remaining }} / {{ leave_bal.sick_days_total }}</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Right: Activity panels ── -->
+  <div>
+
+    <!-- Attendance this month -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-header-icon" style="background:#ebf8ff;">
+            <i class="fas fa-clock" style="color:#3182ce;"></i>
+          </div>
+          <span class="section-header-title">Attendance · {{ this_month|date:"F Y" }}</span>
+        </div>
+        <a href="{% url 'manager_portal:attendance' %}?q={{ emp.full_name }}" class="section-link">
+          Full log <i class="fas fa-arrow-right" style="font-size:10px;"></i>
+        </a>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-cell">
+          <div class="stat-cell-val">{{ days_worked }}</div>
+          <div class="stat-cell-label">Days Worked</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-val">{{ total_hours_month }}</div>
+          <div class="stat-cell-label">Hours Logged</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-val" style="font-size:16px;">
+            {% if days_worked > 0 %}{{ total_hours_month|floatformat:1 }}{% else %}0{% endif %}h
+          </div>
+          <div class="stat-cell-label">This Month</div>
+        </div>
+      </div>
+
+      {% if recent_sessions %}
+        <table class="mini-table">
+          <thead><tr><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Hours</th></tr></thead>
+          <tbody>
+            {% for ws in recent_sessions %}
+            <tr>
+              <td>{{ ws.date|date:"j M Y" }}</td>
+              <td>{{ ws.punch_in|date:"H:i" }}</td>
+              <td>{% if ws.punch_out %}{{ ws.punch_out|date:"H:i" }}{% else %}<span style="color:#38a169;font-size:11px;font-weight:600;">Active</span>{% endif %}</td>
+              <td>{% if ws.worked_hours %}{{ ws.worked_hours|floatformat:1 }}h{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-mini">No attendance records this month.</div>
+      {% endif %}
+    </div>
+
+    <!-- Active tasks -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-header-icon" style="background:#fffbeb;">
+            <i class="fas fa-list-check" style="color:#d69e2e;"></i>
+          </div>
+          <span class="section-header-title">Active Tasks</span>
+        </div>
+        <a href="{% url 'manager_portal:tasks' %}" class="section-link">
+          View all <i class="fas fa-arrow-right" style="font-size:10px;"></i>
+        </a>
+      </div>
+      {% if active_tasks %}
+        <table class="mini-table">
+          <thead><tr><th>Task</th><th>Priority</th><th>Due</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for task in active_tasks %}
+            <tr>
+              <td style="font-weight:600;color:#2d3748;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ task.title }}
+              </td>
+              <td style="text-transform:capitalize;">{{ task.priority }}</td>
+              <td>{% if task.due_date %}{{ task.due_date|date:"j M" }}{% else %}—{% endif %}</td>
+              <td><span class="status-badge badge-{{ task.status }}">{{ task.get_status_display }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-mini">No active tasks assigned.</div>
+      {% endif %}
+    </div>
+
+    <!-- Leave requests -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-header-icon" style="background:#faf5ff;">
+            <i class="fas fa-calendar-xmark" style="color:#805ad5;"></i>
+          </div>
+          <span class="section-header-title">Leave History</span>
+        </div>
+        <a href="{% url 'manager_portal:leave_list' %}?q={{ emp.full_name }}&status=" class="section-link">
+          View all <i class="fas fa-arrow-right" style="font-size:10px;"></i>
+        </a>
+      </div>
+      {% if leave_requests %}
+        <table class="mini-table">
+          <thead><tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for req in leave_requests %}
+            <tr>
+              <td>{{ req.get_leave_type_display }}</td>
+              <td>{{ req.start_date|date:"j M" }}</td>
+              <td>{{ req.end_date|date:"j M Y" }}</td>
+              <td>{{ req.days_requested }}</td>
+              <td><span class="status-badge badge-{{ req.status }}">{{ req.get_status_display }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-mini">No leave requests on record.</div>
+      {% endif %}
+    </div>
+
+    <!-- HR Notes -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-header-left">
+          <div class="section-header-icon" style="background:#fff5f5;">
+            <i class="fas fa-file-lines" style="color:#e53e3e;"></i>
+          </div>
+          <span class="section-header-title">HR Notes</span>
+        </div>
+      </div>
+
+      {% if hr_notes %}
+        {% for note in hr_notes %}
+        <div class="note-item">
+          <div class="note-header">
+            <span class="note-type-badge note-{{ note.note_type }}">{{ note.get_note_type_display }}</span>
+          </div>
+          <div class="note-title">{{ note.title }}</div>
+          <div class="note-content">{{ note.content }}</div>
+          <div class="note-meta">
+            {{ note.created_at|date:"j M Y" }}
+            {% if note.created_by %} · {{ note.created_by.get_full_name|default:note.created_by.username }}{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-mini">No HR notes on file.</div>
+      {% endif %}
+
+      <!-- Add note form -->
+      <div class="add-note-form">
+        <div style="font-size:12px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
+          Add Note
+        </div>
+        <form method="post" action="{% url 'manager_portal:hr_note_add' emp.pk %}">
+          {% csrf_token %}
+          <div class="add-note-grid">
+            <select name="note_type" class="f-select-sm">
+              <option value="general">General</option>
+              <option value="warning">Warning</option>
+              <option value="commendation">Commendation</option>
+              <option value="performance">Performance</option>
+              <option value="disciplinary">Disciplinary</option>
+              <option value="role_change">Role Change</option>
+            </select>
+            <input type="text" name="title" class="f-input-sm" placeholder="Note title…" required>
+          </div>
+          <textarea name="content" class="f-textarea-sm" placeholder="Note content…" required style="margin-bottom:10px;"></textarea>
+          <button type="submit" class="btn-add-note">
+            <i class="fas fa-plus"></i> Add Note
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div><!-- /right col -->
+</div><!-- /detail-layout -->
+{% endblock %}

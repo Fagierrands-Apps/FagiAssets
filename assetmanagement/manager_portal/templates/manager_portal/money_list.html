@@ -1,0 +1,743 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}Money Requests — Management Portal{% endblock %}
+{% block nav_money %}active{% endblock %}
+{% block bnav_money %}active{% endblock %}
+
+{% block page_title %}Money Requests{% endblock %}
+{% block page_subtitle %}Review and action employee fund requests{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Summary strip ── */
+  .money-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .money-stat {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .money-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .money-stat-icon.orange { background: #fffbeb; color: #d69e2e; }
+  .money-stat-icon.green  { background: #f0fff4; color: #38a169; }
+  .money-stat-icon.red    { background: #fff5f5; color: #e53e3e; }
+
+  .money-stat-val {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a365d;
+    line-height: 1;
+  }
+
+  .money-stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 3px;
+  }
+
+  .money-stat-sub {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 2px;
+  }
+
+  /* ── Tabs ── */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 16px;
+    width: fit-content;
+  }
+
+  .tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #718096;
+    text-decoration: none;
+    transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { background: #edf2f7; color: #2d3748; }
+  .tab-btn.active {
+    background: #ffffff;
+    color: #1a365d;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .tab-count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 20px;
+    background: #e2e8f0;
+    color: #718096;
+  }
+  .tab-btn.active .tab-count { background: #ebf8ff; color: #3182ce; }
+  .tab-btn.active .tab-count.orange { background: #fffbeb; color: #d69e2e; }
+
+  /* ── Filters ── */
+  .filters-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .search-wrap { position: relative; margin-left: auto; }
+  .search-icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: #cbd5e0; font-size: 12px; pointer-events: none;
+  }
+  .search-input {
+    height: 34px; padding: 0 12px 0 30px;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    background: #ffffff; font-size: 13px; color: #4a5568;
+    outline: none; width: 220px; transition: border-color 0.12s, width 0.2s;
+  }
+  .search-input:focus { border-color: #3182ce; width: 260px; }
+  .search-input::placeholder { color: #cbd5e0; }
+
+  /* ── Cards grid ── */
+  .money-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+  }
+
+  .money-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: box-shadow 0.15s;
+  }
+  .money-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+  .money-card-strip {
+    height: 3px;
+  }
+  .strip-pending  { background: #d69e2e; }
+  .strip-approved { background: #38a169; }
+  .strip-rejected { background: #e53e3e; }
+
+  .money-card-body { padding: 16px 18px; }
+
+  /* employee row */
+  .mc-emp {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 14px;
+  }
+
+  .mc-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fffbeb;
+    color: #d69e2e;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .mc-name  { font-size: 14px; font-weight: 600; color: #1a365d; }
+  .mc-dept  { font-size: 11px; color: #a0aec0; margin-top: 1px; }
+  .mc-status { margin-left: auto; }
+
+  /* Amount highlight */
+  .mc-amount {
+    background: #fffbeb;
+    border: 1px solid #fbd38d;
+    border-radius: 9px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .mc-amount-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #d69e2e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .mc-amount-val {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a365d;
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+  }
+
+  .mc-amount-currency {
+    font-size: 13px;
+    font-weight: 600;
+    color: #718096;
+  }
+
+  /* Info grid */
+  .mc-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    margin-bottom: 14px;
+  }
+
+  .mc-field-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+
+  .mc-field-val {
+    font-size: 13px;
+    font-weight: 500;
+    color: #2d3748;
+  }
+
+  /* Transfer arrow */
+  .mc-transfer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+  }
+
+  .mc-transfer-from,
+  .mc-transfer-to { font-weight: 600; color: #2d3748; flex: 1; }
+  .mc-transfer-to  { text-align: right; }
+
+  .mc-transfer-arrow {
+    color: #a0aec0;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Notes */
+  .mc-notes {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #718096;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    border: 1px solid #edf2f7;
+  }
+
+  /* Decision note */
+  .mc-decision-note {
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .mc-decision-note.approved { background: #f0fff4; border: 1px solid #c6f6d5; color: #276749; }
+  .mc-decision-note.rejected { background: #fff5f5; border: 1px solid #fed7d7; color: #9b2335; }
+
+  /* Actions */
+  .mc-actions {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid #f7fafc;
+    padding-top: 14px;
+  }
+
+  .btn-approve, .btn-reject {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: pointer;
+    text-align: center;
+    transition: opacity 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-approve { background: #f0fff4; color: #38a169; border-color: #c6f6d5; }
+  .btn-approve:hover { background: #c6f6d5; }
+  .btn-reject  { background: #fff5f5; color: #e53e3e; border-color: #fed7d7; }
+  .btn-reject:hover  { background: #fed7d7; }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-pending  { background: #fffbeb; color: #d69e2e; }
+  .badge-approved { background: #f0fff4; color: #38a169; }
+  .badge-rejected { background: #fff5f5; color: #e53e3e; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal-box {
+    background: #ffffff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+
+  .modal-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-size: 15px; font-weight: 700; color: #1a365d; }
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 7px; background: #f7fafc;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: #a0aec0; transition: background 0.12s;
+  }
+  .modal-close:hover { background: #edf2f7; color: #4a5568; }
+
+  .modal-body { padding: 18px 20px; }
+
+  .modal-amount-box {
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .modal-amount-box.approve { background: #f0fff4; border: 1px solid #c6f6d5; }
+  .modal-amount-box.reject  { background: #fff5f5; border: 1px solid #fed7d7; }
+
+  .modal-amount-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 4px;
+  }
+
+  .modal-amount-val {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a365d;
+  }
+
+  .modal-amount-meta {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 4px;
+  }
+
+  .m-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4a5568;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .m-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #2d3748;
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    background: #f7fafc;
+    transition: border-color 0.15s;
+  }
+  .m-textarea:focus { border-color: #3182ce; background: #fff; }
+
+  .modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .m-btn {
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .m-btn-cancel  { background: #f7fafc; color: #718096; border-color: #e2e8f0; }
+  .m-btn-cancel:hover { background: #edf2f7; }
+  .m-btn-approve { background: #38a169; color: #fff; border-color: #38a169; }
+  .m-btn-approve:hover { background: #2f855a; }
+  .m-btn-reject  { background: #e53e3e; color: #fff; border-color: #e53e3e; }
+  .m-btn-reject:hover  { background: #c53030; }
+
+  /* Empty state */
+  .empty-state { padding: 60px 20px; text-align: center; }
+  .empty-icon {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: #f7fafc; border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: #cbd5e0; margin: 0 auto 14px;
+  }
+  .empty-state h3 { font-size: 15px; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+  .empty-state p  { font-size: 13px; color: #a0aec0; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .money-summary { grid-template-columns: 1fr 1fr; }
+    .money-grid    { grid-template-columns: 1fr; }
+    .tab-bar       { width: 100%; overflow-x: auto; }
+    .search-wrap   { margin-left: 0; width: 100%; }
+    .search-input  { width: 100%; }
+    .search-input:focus { width: 100%; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- ── Summary strip ── -->
+  <div class="money-summary">
+
+    <div class="money-stat">
+      <div class="money-stat-icon orange"><i class="fas fa-hourglass-half"></i></div>
+      <div>
+        <div class="money-stat-val">{{ pending_count }}</div>
+        <div class="money-stat-label">Pending</div>
+        {% if pending_total %}
+          <div class="money-stat-sub">KES {{ pending_total|floatformat:0 }} total</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="money-stat">
+      <div class="money-stat-icon green"><i class="fas fa-circle-check"></i></div>
+      <div>
+        <div class="money-stat-val">{{ approved_count }}</div>
+        <div class="money-stat-label">Approved</div>
+      </div>
+    </div>
+
+    <div class="money-stat">
+      <div class="money-stat-icon red"><i class="fas fa-circle-xmark"></i></div>
+      <div>
+        <div class="money-stat-val">{{ rejected_count }}</div>
+        <div class="money-stat-label">Rejected</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Tabs ── -->
+  <div class="tab-bar">
+    <a href="?status=pending&q={{ search_q }}"
+       class="tab-btn {% if status_filter == 'pending' %}active{% endif %}">
+      Pending <span class="tab-count orange">{{ pending_count }}</span>
+    </a>
+    <a href="?status=approved&q={{ search_q }}"
+       class="tab-btn {% if status_filter == 'approved' %}active{% endif %}">
+      Approved <span class="tab-count">{{ approved_count }}</span>
+    </a>
+    <a href="?status=rejected&q={{ search_q }}"
+       class="tab-btn {% if status_filter == 'rejected' %}active{% endif %}">
+      Rejected <span class="tab-count">{{ rejected_count }}</span>
+    </a>
+    <a href="?status=&q={{ search_q }}"
+       class="tab-btn {% if not status_filter %}active{% endif %}">
+      All
+    </a>
+  </div>
+
+  <!-- ── Search ── -->
+  <div class="filters-row">
+    <form method="get" style="display:contents;">
+      <input type="hidden" name="status" value="{{ status_filter }}">
+      <div class="search-wrap">
+        <i class="fas fa-magnifying-glass search-icon"></i>
+        <input type="text" name="q" value="{{ search_q }}"
+          class="search-input" placeholder="Search employee…" autocomplete="off">
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Cards ── -->
+  {% if requests %}
+    <div class="money-grid">
+      {% for req in requests %}
+      <div class="money-card" data-name="{{ req.employee.full_name|lower }}">
+
+        <div class="money-card-strip strip-{{ req.status }}"></div>
+
+        <div class="money-card-body">
+
+          <!-- Employee -->
+          <div class="mc-emp">
+            <div class="mc-avatar">
+              {{ req.employee.user.first_name|first|upper }}{{ req.employee.user.last_name|first|upper }}
+            </div>
+            <div>
+              <div class="mc-name">{{ req.employee.full_name }}</div>
+              <div class="mc-dept">{{ req.employee.department.name|default:"No Department" }}</div>
+            </div>
+            <div class="mc-status">
+              <span class="status-badge badge-{{ req.status }}">{{ req.get_status_display }}</span>
+            </div>
+          </div>
+
+          <!-- Amount -->
+          <div class="mc-amount">
+            <span class="mc-amount-label"><i class="fas fa-money-bill-wave"></i> Amount</span>
+            <span class="mc-amount-val">
+              <span class="mc-amount-currency">KES</span> {{ req.amount|floatformat:0 }}
+            </span>
+          </div>
+
+          <!-- Transfer direction -->
+          <div class="mc-transfer">
+            <span class="mc-transfer-from">{{ req.from_entity }}</span>
+            <span class="mc-transfer-arrow"><i class="fas fa-arrow-right"></i></span>
+            <span class="mc-transfer-to">{{ req.to_entity }}</span>
+          </div>
+
+          <!-- Info -->
+          <div class="mc-info">
+            <div>
+              <div class="mc-field-label">Request Date</div>
+              <div class="mc-field-val">{{ req.request_date|date:"j M Y" }}</div>
+            </div>
+            <div>
+              <div class="mc-field-label">Submitted</div>
+              <div class="mc-field-val">{{ req.created_at|date:"j M Y" }}</div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          {% if req.notes %}
+            <div class="mc-notes">
+              <span style="color:#a0aec0;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">Notes — </span>
+              {{ req.notes }}
+            </div>
+          {% endif %}
+
+          <!-- Decision note -->
+          {% if req.decision_notes and req.status != 'pending' %}
+            <div class="mc-decision-note {{ req.status }}">
+              <span style="font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;">
+                {% if req.status == 'approved' %}✓ Approved{% else %}✕ Rejected{% endif %}
+                {% if req.processed_by %} by {{ req.processed_by.full_name }}{% endif %}
+                {% if req.processed_at %} · {{ req.processed_at|date:"j M Y" }}{% endif %}
+              </span><br>
+              {{ req.decision_notes }}
+            </div>
+          {% endif %}
+
+          <!-- Actions -->
+          {% if req.status == 'pending' %}
+            <div class="mc-actions">
+              <button type="button" class="btn-approve"
+                onclick="openModal('approve', {{ req.pk }}, '{{ req.employee.full_name }}', {{ req.amount }}, '{{ req.from_entity }}', '{{ req.to_entity }}')">
+                <i class="fas fa-check"></i> Approve
+              </button>
+              <button type="button" class="btn-reject"
+                onclick="openModal('reject', {{ req.pk }}, '{{ req.employee.full_name }}', {{ req.amount }}, '{{ req.from_entity }}', '{{ req.to_entity }}')">
+                <i class="fas fa-xmark"></i> Reject
+              </button>
+            </div>
+          {% else %}
+            <div style="padding-top:14px;border-top:1px solid #f7fafc;font-size:11px;color:#a0aec0;">
+              Submitted {{ req.created_at|date:"j M Y" }}
+              {% if req.processed_by %} · Processed by {{ req.processed_by.full_name }}{% endif %}
+            </div>
+          {% endif %}
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fas fa-money-bill-wave"></i></div>
+      <h3>No money requests</h3>
+      <p>
+        {% if status_filter == 'pending' %}
+          There are no pending money requests right now.
+        {% else %}
+          No requests match the current filters.
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+
+<!-- Approve modal -->
+<div class="modal-overlay" id="approveModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-check" style="color:#38a169;margin-right:8px;"></i>Approve Money Request</span>
+      <button class="modal-close" onclick="closeModal('approveModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <form method="post" id="approveForm">
+      {% csrf_token %}
+      <div class="modal-body">
+        <div class="modal-amount-box approve">
+          <div class="modal-amount-name" id="approveEmpName"></div>
+          <div class="modal-amount-val" id="approveAmt"></div>
+          <div class="modal-amount-meta" id="approveMeta"></div>
+        </div>
+        <label class="m-label">Note (optional)</label>
+        <textarea name="notes" class="m-textarea" placeholder="Add a note about this approval…"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="m-btn m-btn-cancel" onclick="closeModal('approveModal')">Cancel</button>
+        <button type="submit" class="m-btn m-btn-approve"><i class="fas fa-check"></i> Confirm Approve</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Reject modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title"><i class="fas fa-xmark" style="color:#e53e3e;margin-right:8px;"></i>Reject Money Request</span>
+      <button class="modal-close" onclick="closeModal('rejectModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <form method="post" id="rejectForm">
+      {% csrf_token %}
+      <div class="modal-body">
+        <div class="modal-amount-box reject">
+          <div class="modal-amount-name" id="rejectEmpName"></div>
+          <div class="modal-amount-val" id="rejectAmt"></div>
+          <div class="modal-amount-meta" id="rejectMeta"></div>
+        </div>
+        <label class="m-label">Reason for rejection <span style="color:#e53e3e;">*</span></label>
+        <textarea name="notes" class="m-textarea" placeholder="Explain why this request is being rejected…" required></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="m-btn m-btn-cancel" onclick="closeModal('rejectModal')">Cancel</button>
+        <button type="submit" class="m-btn m-btn-reject"><i class="fas fa-xmark"></i> Confirm Reject</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const approveBase = "{% url 'manager_portal:money_approve' 0 %}".replace('0/', '{pk}/');
+  const rejectBase  = "{% url 'manager_portal:money_reject'  0 %}".replace('0/', '{pk}/');
+
+  function openModal(action, pk, name, amount, from, to) {
+    const fmtAmt = 'KES ' + amount.toLocaleString();
+    const meta   = from + ' → ' + to;
+
+    if (action === 'approve') {
+      document.getElementById('approveEmpName').textContent = name;
+      document.getElementById('approveAmt').textContent     = fmtAmt;
+      document.getElementById('approveMeta').textContent    = meta;
+      document.getElementById('approveForm').action = approveBase.replace('{pk}', pk);
+      document.getElementById('approveModal').classList.add('open');
+    } else {
+      document.getElementById('rejectEmpName').textContent = name;
+      document.getElementById('rejectAmt').textContent     = fmtAmt;
+      document.getElementById('rejectMeta').textContent    = meta;
+      document.getElementById('rejectForm').action = rejectBase.replace('{pk}', pk);
+      document.getElementById('rejectModal').classList.add('open');
+    }
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target === this) closeModal(this.id);
+    });
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.open').forEach(el => closeModal(el.id));
+    }
+  });
+</script>
+{% endblock %}

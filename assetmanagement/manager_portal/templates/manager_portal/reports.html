@@ -1,0 +1,541 @@
+{% extends 'manager_portal/base.html' %}
+{% block title %}Reports — Management Portal{% endblock %}
+{% block nav_reports %}active{% endblock %}
+{% block bnav_reports %}active{% endblock %}
+
+{% block page_title %}Reports{% endblock %}
+{% block page_subtitle %}{{ this_month|date:"F Y" }} · Overview &amp; analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Section title ── */
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin: 24px 0 12px;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  /* ── Stat grid ── */
+  .stat-grid {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .stat-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .stat-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .stat-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .stat-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .stat-card-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-card-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+  }
+
+  .stat-card-icon.green  { background: #f0fff4; color: #38a169; }
+  .stat-card-icon.blue   { background: #ebf8ff; color: #3182ce; }
+  .stat-card-icon.orange { background: #fffbeb; color: #d69e2e; }
+  .stat-card-icon.red    { background: #fff5f5; color: #e53e3e; }
+  .stat-card-icon.slate  { background: #f7fafc; color: #718096; }
+  .stat-card-icon.purple { background: #faf5ff; color: #805ad5; }
+
+  .stat-card-val {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1a365d;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-card-sub {
+    font-size: 12px;
+    color: #a0aec0;
+  }
+
+  /* ── Two-column lower layout ── */
+  .lower-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 4px;
+  }
+
+  /* ── Section cards ── */
+  .section-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .section-header {
+    padding: 13px 18px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f7fafc;
+  }
+
+  .section-header-icon {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+
+  .section-header-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a365d;
+  }
+
+  /* ── Top workers table ── */
+  .workers-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .workers-table th {
+    padding: 9px 16px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .workers-table td {
+    padding: 11px 16px;
+    font-size: 13px;
+    color: #4a5568;
+    border-bottom: 1px solid #f7fafc;
+    vertical-align: middle;
+  }
+  .workers-table tr:last-child td { border-bottom: none; }
+  .workers-table tr:hover td { background: #f7fafc; }
+
+  .w-rank {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #718096;
+    flex-shrink: 0;
+  }
+  .w-rank.gold   { background: #fffbeb; border-color: #fbd38d; color: #d69e2e; }
+  .w-rank.silver { background: #f7fafc; border-color: #cbd5e0; color: #718096; }
+  .w-rank.bronze { background: #fff5f0; border-color: #fbd38d; color: #c05621; }
+
+  .w-name { font-weight: 600; color: #2d3748; font-size: 13px; }
+  .w-dept { font-size: 11px; color: #a0aec0; margin-top: 1px; }
+
+  .w-hours {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a365d;
+    white-space: nowrap;
+  }
+
+  /* hours bar */
+  .w-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 100px;
+  }
+  .w-bar {
+    flex: 1;
+    height: 5px;
+    background: #edf2f7;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .w-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3182ce, #63b3ed);
+    border-radius: 10px;
+  }
+
+  /* ── Trend chart ── */
+  .trend-wrap {
+    padding: 16px 18px;
+  }
+
+  .trend-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 80px;
+    margin-bottom: 6px;
+  }
+
+  .trend-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .trend-bar {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    background: #3182ce;
+    min-height: 3px;
+    transition: height 0.3s;
+    position: relative;
+  }
+  .trend-bar:hover { background: #2b6cb0; }
+
+  .trend-bar-val {
+    font-size: 9px;
+    font-weight: 700;
+    color: #4a5568;
+    white-space: nowrap;
+  }
+
+  .trend-labels {
+    display: flex;
+    gap: 4px;
+  }
+
+  .trend-label {
+    flex: 1;
+    text-align: center;
+    font-size: 9px;
+    color: #a0aec0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  /* ── Leave breakdown ── */
+  .leave-breakdown { padding: 0; }
+
+  .leave-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid #f7fafc;
+  }
+  .leave-row:last-child { border-bottom: none; }
+
+  .leave-type-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .leave-type-name { font-size: 13px; font-weight: 500; color: #2d3748; flex: 1; }
+
+  .leave-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: #718096;
+  }
+
+  .leave-stat-val { font-weight: 700; color: #1a365d; }
+
+  /* ── Task completion ring (CSS only) ── */
+  .completion-ring-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .ring-container {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    margin-bottom: 12px;
+  }
+
+  .ring-svg { transform: rotate(-90deg); }
+
+  .ring-track { fill: none; stroke: #edf2f7; stroke-width: 8; }
+  .ring-fill  { fill: none; stroke: #38a169; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.6s; }
+
+  .ring-pct {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a365d;
+  }
+
+  .ring-label { font-size: 12px; color: #a0aec0; text-align: center; }
+
+  /* Empty */
+  .empty-row {
+    padding: 28px 18px;
+    text-align: center;
+    font-size: 13px;
+    color: #cbd5e0;
+  }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .stat-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+    .lower-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    .stat-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+    .stat-grid.cols-2 { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- ── Attendance stats ── -->
+  <div class="section-title">Attendance · {{ this_month|date:"F Y" }}</div>
+  <div class="stat-grid cols-4">
+    <div class="stat-card">
+      <div class="stat-card-top">
+        <span class="stat-card-label">Total Employees</span>
+        <div class="stat-card-icon slate"><i class="fas fa-users"></i></div>
+      </div>
+      <div class="stat-card-val">{{ total_employees }}</div>
+      <div class="stat-card-sub">active staff</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-top">
+        <span class="stat-card-label">Hours This Month</span>
+        <div class="stat-card-icon blue"><i class="fas fa-clock"></i></div>
+      </div>
+      <div class="stat-card-val">{{ total_hours_month }}</div>
+      <div class="stat-card-sub">total hours logged</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-top">
+        <span class="stat-card-label">Hours This Week</span>
+        <div class="stat-card-icon green"><i class="fas fa-calendar-week"></i></div>
+      </div>
+      <div class="stat-card-val">{{ total_hours_week }}</div>
+      <div class="stat-card-sub">since {{ week_start|date:"l" }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-top">
+        <span class="stat-card-label">Avg Hours/Day</span>
+        <div class="stat-card-icon purple"><i class="fas fa-chart-line"></i></div>
+      </div>
+      <div class="stat-card-val">{{ avg_hours_per_day }}</div>
+      <div class="stat-card-sub">team average</div>
+    </div>
+  </div>
+
+  <!-- ── Tasks & money ── -->
+  <div class="section-title">Tasks &amp; Finances</div>
+  <div class="stat-grid cols-3">
+    <div class="stat-card">
+      <div class="stat-card-top">
+        <span class="stat-card-label">Tasks Completed</span>
+        <div class="stat-card-icon green"><i class="fas fa-circle-check"></i></div>
+      </div>
+      <div class="stat-card-val">{{ tasks_completed }}</div>
+      <div class="stat-card-sub">of {{ tasks_total }} total tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-top">
+        <span class="stat-card-label">Overdue Tasks</span>
+        <div class="stat-card-icon red"><i class="fas fa-triangle-exclamation"></i></div>
+      </div>
+      <div class="stat-card-val">{{ tasks_overdue }}</div>
+      <div class="stat-card-sub">need attention</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-top">
+        <span class="stat-card-label">Money Approved</span>
+        <div class="stat-card-icon orange"><i class="fas fa-money-bill-wave"></i></div>
+      </div>
+      <div class="stat-card-val" style="font-size:22px;">KES {{ total_money_approved|floatformat:0 }}</div>
+      <div class="stat-card-sub">approved this month</div>
+    </div>
+  </div>
+
+  <!-- ── Lower section ── -->
+  <div class="section-title">Details</div>
+  <div class="lower-grid">
+
+    <!-- Top workers -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-header-icon" style="background:#ebf8ff;">
+          <i class="fas fa-trophy" style="color:#3182ce;font-size:11px;"></i>
+        </div>
+        <span class="section-header-title">Top Workers · {{ this_month|date:"F" }}</span>
+      </div>
+      {% if top_workers %}
+        <table class="workers-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Employee</th>
+              <th>Dept</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for w in top_workers %}
+            {% with rank=forloop.counter %}
+            <tr>
+              <td style="width:40px;">
+                <div class="w-rank {% if rank == 1 %}gold{% elif rank == 2 %}silver{% elif rank == 3 %}bronze{% endif %}">
+                  {{ rank }}
+                </div>
+              </td>
+              <td>
+                <div class="w-name">{{ w.employee__user__first_name }} {{ w.employee__user__last_name }}</div>
+                <div class="w-dept">{{ w.employee__employee_id }}</div>
+              </td>
+              <td style="font-size:12px;color:#a0aec0;">
+                {{ w.employee__department__name|default:"—" }}
+              </td>
+              <td>
+                <span class="w-hours">{{ w.total_h|floatformat:1 }}h</span>
+              </td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-row">No attendance data this month.</div>
+      {% endif %}
+    </div>
+
+    <!-- Right column: trend + leave breakdown -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- 14-day trend -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-header-icon" style="background:#f0fff4;">
+            <i class="fas fa-chart-bar" style="color:#38a169;font-size:11px;"></i>
+          </div>
+          <span class="section-header-title">Daily Clock-ins — Last 14 Days</span>
+        </div>
+        <div class="trend-wrap">
+          {% if trend_days %}
+          {% with max_count=trend_days.0.count %}
+          {# Find max for scaling #}
+          {% for d in trend_days %}{% if d.count > max_count %}{% with max_count=d.count %}{% endwith %}{% endif %}{% endfor %}
+
+          <div class="trend-bars" id="trendBars">
+            {% for d in trend_days %}
+            <div class="trend-bar-col">
+              <span class="trend-bar-val">{% if d.count %}{{ d.count }}{% endif %}</span>
+              <div class="trend-bar"
+                data-count="{{ d.count }}"
+                style="height: 4px; background: {% if d.date == today %}#1a365d{% else %}#90cdf4{% endif %};">
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="trend-labels">
+            {% for d in trend_days %}
+            <div class="trend-label">{{ d.date|date:"j" }}</div>
+            {% endfor %}
+          </div>
+          {% endwith %}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Leave breakdown -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-header-icon" style="background:#fffbeb;">
+            <i class="fas fa-calendar-check" style="color:#d69e2e;font-size:11px;"></i>
+          </div>
+          <span class="section-header-title">Leave Approved · {{ this_month|date:"F" }}</span>
+        </div>
+        <div class="leave-breakdown">
+          {% if leave_by_type %}
+            {% for lt in leave_by_type %}
+            <div class="leave-row">
+              <div class="leave-type-dot"
+                style="background:{% if lt.leave_type == 'annual' %}#3182ce{% elif lt.leave_type == 'sick' %}#e53e3e{% elif lt.leave_type == 'emergency' %}#d69e2e{% else %}#a0aec0{% endif %};"></div>
+              <span class="leave-type-name">
+                {% if lt.leave_type == 'annual' %}Annual
+                {% elif lt.leave_type == 'sick' %}Sick
+                {% elif lt.leave_type == 'emergency' %}Emergency
+                {% else %}Unpaid{% endif %}
+              </span>
+              <div class="leave-stats">
+                <span><span class="leave-stat-val">{{ lt.count }}</span> requests</span>
+                <span><span class="leave-stat-val">{{ lt.days }}</span> days</span>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-row">No approved leave this month.</div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div><!-- /right col -->
+  </div><!-- /lower-grid -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Scale trend bars proportionally
+  (function () {
+    const bars = document.querySelectorAll('.trend-bar');
+    if (!bars.length) return;
+
+    let max = 0;
+    bars.forEach(b => { const v = parseInt(b.dataset.count) || 0; if (v > max) max = v; });
+    if (!max) return;
+
+    bars.forEach(b => {
+      const v = parseInt(b.dataset.count) || 0;
+      const pct = Math.max(4, Math.round((v / max) * 100));
+      b.style.height = pct + '%';
+    });
+  })();
+</script>
+{% endblock %}
