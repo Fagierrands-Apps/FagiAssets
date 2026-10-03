@@ -462,10 +462,15 @@
   @media (max-width: 768px) {
     .money-summary { grid-template-columns: 1fr 1fr; }
     .money-grid    { grid-template-columns: 1fr; }
-    .tab-bar       { width: 100%; overflow-x: auto; }
+    .tab-bar       { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
     .search-wrap   { margin-left: 0; width: 100%; }
     .search-input  { width: 100%; }
     .search-input:focus { width: 100%; }
+    .controls-bar  { flex-direction: column; gap: 8px; }
+    .controls-bar > * { width: 100%; }
+  }
+  @media (max-width: 480px) {
+    .money-summary { grid-template-columns: 1fr; }
   }
 </style>
 {% endblock %}

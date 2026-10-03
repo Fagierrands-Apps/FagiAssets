@@ -313,8 +313,12 @@
   @media (max-width: 768px) {
     .summary-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .lower-grid   { grid-template-columns: 1fr; }
-    .quick-actions { gap: 8px; }
+    .quick-actions { gap: 8px; flex-wrap: wrap; }
     .qa-btn { padding: 8px 12px; font-size: 12px; }
+  }
+  @media (max-width: 480px) {
+    .summary-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .qa-btn { flex: 1 1 calc(50% - 4px); text-align: center; justify-content: center; }
   }
 </style>
 {% endblock %}

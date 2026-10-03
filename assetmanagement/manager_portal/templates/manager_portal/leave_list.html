@@ -402,8 +402,9 @@
   /* Responsive */
   @media (max-width: 768px) {
     .leave-grid { grid-template-columns: 1fr; }
-    .tab-bar { width: 100%; overflow-x: auto; }
-    .filters-row { gap: 8px; }
+    .tab-bar { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+    .filters-row { flex-direction: column; gap: 8px; }
+    .filters-row > * { width: 100%; }
     .search-wrap { margin-left: 0; width: 100%; }
     .search-input { width: 100%; }
     .search-input:focus { width: 100%; }

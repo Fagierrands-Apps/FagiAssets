@@ -344,11 +344,17 @@
 
   @media (max-width: 768px) {
     .att-summary { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .controls-bar { gap: 8px; }
+    .controls-bar { flex-direction: column; gap: 8px; }
+    .controls-bar > * { width: 100%; }
     .search-wrap { margin-left: 0; width: 100%; }
     .search-input { width: 100%; }
     .search-input:focus { width: 100%; }
-    .col-punch-out, .col-break { display: none; }
+    .col-punch-out, .col-break, .col-dept { display: none; }
+    /* wrap the table so it scrolls horizontally inside the card */
+    .mp-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  }
+  @media (max-width: 480px) {
+    .att-summary { grid-template-columns: 1fr 1fr; gap: 8px; }
   }
 </style>
 {% endblock %}

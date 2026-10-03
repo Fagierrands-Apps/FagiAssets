@@ -939,6 +939,78 @@
 
       /* show mobile topbar */
       .mobile-topbar { display: flex !important; }
+
+      /* ── Prevent horizontal overflow ── */
+      html, body { overflow-x: hidden; }
+
+      .portal-layout,
+      .main-content,
+      .content-body { max-width: 100vw; overflow-x: hidden; }
+
+      /* Tables: wrap in a horizontal scroll container so they
+         don't blow out the page — content scrolls inside the
+         card, not the whole viewport */
+      .mp-card table,
+      table.mp-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+      /* Stat grids: collapse to 2 columns (or 1 on tiny screens) */
+      .mp-stats-grid,
+      .stats-grid,
+      [class*="stats-grid"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+      }
+
+      /* Any explicit multi-column grid — collapse to 1 or 2 */
+      .mp-grid-2,
+      .mp-grid-3,
+      .mp-grid-4 { grid-template-columns: 1fr !important; }
+
+      /* Cards that sit side-by-side — stack them */
+      .mp-card-row,
+      .card-row { flex-direction: column !important; }
+
+      /* Ensure all cards are full width */
+      .mp-card { width: 100% !important; min-width: 0 !important; }
+
+      /* Buttons inside headers — allow wrapping */
+      .mp-section-header {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      /* Filter bars — stack filters vertically */
+      .mp-filters,
+      .filters-row {
+        flex-direction: column !important;
+        gap: 8px !important;
+      }
+      .mp-filters > *,
+      .filters-row > * { width: 100% !important; }
+
+      /* Inputs and selects full width */
+      .mp-input, .mp-select { width: 100% !important; }
+
+      /* Tab bars — allow horizontal scroll instead of wrapping */
+      .mp-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap !important;
+        max-width: 100%;
+      }
+    }
+
+    /* Extra small screens */
+    @media (max-width: 480px) {
+      .mp-stats-grid,
+      .stats-grid,
+      [class*="stats-grid"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      .content-body { padding: 12px 12px 24px; }
+
+      .mp-btn { font-size: 13px; padding: 8px 14px; }
     }
 
     /* ── Mobile topbar ── */
