@@ -21,9 +21,15 @@ from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 from users.views import RoleBasedLoginView, root_redirect
+from crm.zkteco_views import cdata, getrequest
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # ── ZKTeco ADMS push endpoints (no auth, csrf exempt) ──────────────────
+    # Device pushes to: /iclock/cdata  and  /iclock/getrequest
+    path('iclock/cdata', cdata, name='zkteco_cdata'),
+    path('iclock/getrequest', getrequest, name='zkteco_getrequest'),
     
     # Authentication URLs
     path('login/', RoleBasedLoginView.as_view(), name='login'),

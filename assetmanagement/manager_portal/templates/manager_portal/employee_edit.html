@@ -220,6 +220,23 @@
       </div>
     </div>
 
+    <!-- ZKTeco device -->
+    <div class="form-section">
+      <div class="form-section-title"><i class="fas fa-fingerprint"></i> Biometric Device</div>
+      <div style="max-width:320px;">
+        <label class="f-label">ZKTeco User ID</label>
+        <input type="text" name="zkteco_id" class="f-input"
+          value="{{ post.zkteco_id|default:emp.zkteco_id|default:'' }}"
+          placeholder="e.g. 1, 2, 3 …"
+          style="font-family:monospace;">
+        <div class="readonly-note" style="margin-top:6px;">
+          <i class="fas fa-info-circle" style="font-size:10px;color:#63b3ed;"></i>
+          The numeric User ID assigned to this employee on the K40 fingerprint device.
+          Leave blank if not enrolled.
+        </div>
+      </div>
+    </div>
+
     <div class="form-actions">
       <button type="submit" class="btn-submit">
         <i class="fas fa-floppy-disk"></i> Save Changes

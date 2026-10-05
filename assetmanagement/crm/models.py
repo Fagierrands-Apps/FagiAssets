@@ -71,6 +71,10 @@ class Employee(models.Model):
     salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     is_manager = models.BooleanField(default=False)
     weekly_target = models.IntegerField(default=10, help_text="Weekly call target for this employee")
+    zkteco_id = models.CharField(
+        max_length=20, blank=True, null=True, unique=True,
+        help_text="User ID enrolled on the ZKTeco fingerprint device (e.g. 1, 2, 3...)"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -485,7 +489,14 @@ class TimeEntry(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     location = models.CharField(max_length=100, blank=True)  # Optional GPS/location info
     notes = models.TextField(blank=True)
-    
+
+    # Source tracking — 'manual' (web portal) or 'device' (ZKTeco push)
+    source = models.CharField(
+        max_length=20,
+        default='manual',
+        choices=[('manual', 'Manual (Web)'), ('device', 'ZKTeco Device')],
+    )
+
     # System tracking
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)

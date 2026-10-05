@@ -221,6 +221,16 @@ def attendance(request):
     session_map   = {ws.employee_id: ws for ws in sessions}
     on_leave_ids  = set(on_leave_qs.values_list('employee_id', flat=True))
 
+    # Build a map of employee_id -> punch_in source for the selected date
+    from crm.models import TimeEntry
+    device_punch_ids = set(
+        TimeEntry.objects.filter(
+            timestamp__date=selected_date,
+            entry_type='punch_in',
+            source='device',
+        ).values_list('employee_id', flat=True)
+    )
+
     # Department filter
     dept_filter = request.GET.get('dept', '')
     status_filter = request.GET.get('status', '')
@@ -257,6 +267,7 @@ def attendance(request):
             'punch_out': punch_out,
             'worked_h':  round(worked_h, 1),
             'break_h':   round(break_h, 1),
+            'from_device': emp.id in device_punch_ids,
         })
 
     # ── Summary counts ───────────────────────────────────────────────────
@@ -1079,6 +1090,7 @@ def employee_edit(request, pk):
         emp_type   = p.get('employment_type', emp.employment_type)
         salary     = p.get('salary', '')
         status     = p.get('employment_status', emp.employment_status)
+        zkteco_id  = p.get('zkteco_id', '').strip() or None
 
         if not first_name: errors.append('First name is required.')
         if not last_name:  errors.append('Last name is required.')
@@ -1104,6 +1116,7 @@ def employee_edit(request, pk):
                 else:
                     emp.department = None
                 emp.salary = float(salary) if salary else None
+                emp.zkteco_id = zkteco_id
                 emp.save()
                 messages.success(request, f'{emp.full_name} updated successfully.')
                 return redirect('manager_portal:employee_detail', pk=emp.pk)

@@ -512,6 +512,12 @@
             <td>
               {% if row.punch_in %}
                 <span class="time-val">{{ row.punch_in|date:"H:i" }}</span>
+                {% if row.from_device %}
+                  <span title="Auto-recorded by ZKTeco device"
+                    style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#3182ce;background:#ebf8ff;border:1px solid #bee3f8;border-radius:99px;padding:1px 7px;margin-left:5px;vertical-align:middle;">
+                    <i class="fas fa-fingerprint" style="font-size:9px;"></i> Device
+                  </span>
+                {% endif %}
               {% else %}
                 <span class="time-null">—</span>
               {% endif %}
